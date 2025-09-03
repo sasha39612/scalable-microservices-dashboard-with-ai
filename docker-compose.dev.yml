@@ -1,0 +1,58 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - api-gateway
+    command: npm run dev
+
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile.dev
+    container_name: api-gateway
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend/api-gateway:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run start:dev
+
+  worker-service:
+    build:
+      context: ./backend/worker-service
+      dockerfile: Dockerfile.dev
+    container_name: worker-service
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./backend/worker-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run start:dev
+
+  ai-service:
+    build:
+      context: ./backend/ai-service
+      dockerfile: Dockerfile.dev
+    container_name: ai-service
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/ai-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run start:dev

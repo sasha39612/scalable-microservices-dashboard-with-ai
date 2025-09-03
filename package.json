@@ -1,0 +1,13 @@
+{
+  "name": "microservices-dashboard",
+  "author": "Oleksandr Stolyarov",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:start": "docker-compose -f docker-compose.dev.yml up --build",
+    "dev:docker:down": "docker-compose -f docker-compose.dev.yml down -v",
+    "prod:docker:build": "docker-compose build",
+    "prod:docker:up": "docker-compose up -d",
+    "prod:docker:down": "docker-compose down"
+  }
+}

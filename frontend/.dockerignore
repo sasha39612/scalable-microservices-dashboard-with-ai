@@ -1,0 +1,15 @@
+# Ignore local node_modules
+node_modules
+
+# Ignore Next.js build output
+.next
+
+# Ignore environment files
+.env
+.env.local
+.env.*.local
+
+# Optional: logs and temporary files
+npm-debug.log
+yarn-error.log
+.DS_Store

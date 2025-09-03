@@ -1,0 +1,19 @@
+# Use Node LTS
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files first for caching
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy all source code
+COPY . .
+
+# Expose port for Next.js dev
+EXPOSE 3000
+
+# Start Next.js in dev mode
+CMD ["npm", "run", "dev"]

@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #1a1919;
+  --foreground: #ffffff
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-inter);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@layer components {
+  .absoluteInTheMiddle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .scrollbar-hidden {
+    -ms-overflow-style: none; /* IE 10+ */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+  .maxXl {
+    @apply container max-w-[1280px] mb-[70px];
+  }
+  .widthSM {
+    width: calc(100vw - theme("spacing.40"));
+  }
+  .widthMD {
+    width: calc(100vw - theme("spacing.80"));
+  }
+  .widthLG {
+    width: calc(100vw - theme("spacing.112"));
+  }
+  .headingWhite {
+    @apply font-heading font-medium text-4xl lg:text-7xl md:text-5xl text-whiteHeaderText mb-7 leading-[1.2] tracking-[2%];
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
