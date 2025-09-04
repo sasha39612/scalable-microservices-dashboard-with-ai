@@ -8,6 +8,18 @@
     "dev:docker:down": "docker-compose -f docker-compose.dev.yml down -v",
     "prod:docker:build": "docker-compose build",
     "prod:docker:up": "docker-compose up -d",
-    "prod:docker:down": "docker-compose down"
+    "prod:docker:down": "docker-compose down",
+    "test": "DOTENV_CONFIG_PATH=./backend/common/.env.test jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.1.3",
+    "ts-jest": "^29.4.1",
+    "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2"
   }
 }
