@@ -1,0 +1,42 @@
+name: "CodeQL Analysis"
+
+# Trigger on pushes, PRs, and scheduled scans
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '0 3 * * 0'  # Every Sunday at 03:00 UTC
+
+jobs:
+  codeql:
+    name: Analyze code for security vulnerabilities
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      # Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, typescript
+          # Optionally specify queries: 
+          # queries: security-and-quality
+
+      # Perform CodeQL analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      # Optional: Upload SARIF artifact for code scanning UI
+      - name: Upload SARIF for GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif

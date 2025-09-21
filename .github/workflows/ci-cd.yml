@@ -1,0 +1,146 @@
+name: CI/CD Monorepo
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+
+  # ========================
+  # Setup dependencies
+  # ========================
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.cache-deps.outputs.cache-hit }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Cache pnpm store
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install
+
+  # ========================
+  # Lint all projects
+  # ========================
+  lint:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - run: npm install -g pnpm
+      - run: pnpm lint
+
+  # ========================
+  # Backend tests
+  # ========================
+  test-backend:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - name: Test API Gateway
+        working-directory: ./backend/api-gateway
+        run: pnpm test
+      - name: Test Worker Service
+        working-directory: ./backend/worker-service
+        run: pnpm test
+
+  # ========================
+  # Frontend tests
+  # ========================
+  test-frontend:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - name: Test Frontend
+        working-directory: ./frontend
+        run: pnpm test
+
+  # ========================
+  # Mobile tests
+  # ========================
+  test-mobile:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - name: Test Mobile
+        working-directory: ./mobile
+        run: pnpm test
+
+  # ========================
+  # Full Deployment
+  # ========================
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, test-mobile, lint]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Login to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Make deploy script executable
+      - name: Make deploy script executable
+        run: chmod +x ./scripts/deploy.sh
+
+      # Run the unified deploy script
+      - name: Run deployment
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          ./scripts/deploy.sh
