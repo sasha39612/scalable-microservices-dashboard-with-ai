@@ -1,5 +1,6 @@
-// jest.config.ts
-export default {
+import type { Config } from '@jest/types';
+
+const config: Config.InitialOptions = {
   verbose: true,
   testEnvironment: 'node',
   transform: {
@@ -14,10 +15,16 @@ export default {
     '!**/dist/**',
     '!**/build/**',
   ],
+  testMatch: [
+    '<rootDir>/backend/**/__tests__/**/*.spec.ts',
+    '<rootDir>/backend/**/tests/**/*.spec.ts',
+    '<rootDir>/backend/**/*.spec.ts',
+  ],
   globals: {
     'ts-jest': {
       tsconfig: 'tsconfig.json',
     },
   },
-  testMatch: ['**/backend/**/tests/**/*.spec.ts'],
 };
+
+export default config;

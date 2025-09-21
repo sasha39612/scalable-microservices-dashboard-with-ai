@@ -15,5 +15,10 @@
     "isolatedModules": true,
     "baseUrl": "."
   },
+    "include": [
+    "backend/api-gateway/src",
+    "backend/worker-service/src",
+    "backend/common"
+  ],
   "exclude": ["node_modules", "dist", "build", "coverage"]
 }
