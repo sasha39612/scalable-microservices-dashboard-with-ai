@@ -55,6 +55,7 @@ jobs:
         with:
           node-version: 20
       - run: npm install -g pnpm
+      - run: pnpm install        # install dependencies so ESLint exists
       - run: pnpm lint
 
   # ========================
