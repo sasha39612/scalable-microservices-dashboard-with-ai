@@ -82,7 +82,8 @@ jobs:
         run: pnpm install
 
       - name: Test API Gateway
-        run: pnpm --filter ./backend/api-gateway exec jest --passWithNoTests
+        working-directory: ./backend/api-gateway
+        run: pnpm exec jest --passWithNoTests
 
       - name: Test Worker Service
         working-directory: ./backend/worker-service
@@ -96,20 +97,19 @@ jobs:
     needs: setup
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          cache: 'pnpm'
 
-      - uses: pnpm/action-setup@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          version: 8
+          node-version: '20'
+
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
 
       - name: Install dependencies
         run: pnpm install
 
-      - name: Test Frontend
-        working-directory: ./frontend
+      - name: Run tests
         run: pnpm exec jest --passWithNoTests
 
   # ========================
