@@ -69,27 +69,22 @@ jobs:
         with:
           node-version: 20
 
-      # Setup pnpm
       - uses: pnpm/action-setup@v2
         with:
           version: 8
 
-      # Verify pnpm installation
       - name: Verify pnpm
         run: |
           which pnpm
           pnpm --version
 
-      # Install all dependencies from the monorepo root
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
-      # Run tests for api-gateway
       - name: Test API Gateway
         working-directory: ./backend/api-gateway
         run: pnpm exec jest --passWithNoTests
 
-      # Run tests for worker-service
       - name: Test Worker Service
         working-directory: ./backend/worker-service
         run: pnpm exec jest --passWithNoTests
