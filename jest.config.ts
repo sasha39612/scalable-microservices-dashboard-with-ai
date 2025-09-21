@@ -7,8 +7,9 @@ export default {
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
   collectCoverageFrom: [
-    'backend/src/**/*.{ts,tsx,js}',
-    'backend/common/src/**/*.{ts,tsx,js}',
+    'backend/api-gateway/src/**/*.{ts,tsx,js}',
+    'backend/worker-service/src/**/*.{ts,tsx,js}',
+    'backend/common/**/*.{ts,tsx,js}',
     '!**/node_modules/**',
     '!**/dist/**',
     '!**/build/**',

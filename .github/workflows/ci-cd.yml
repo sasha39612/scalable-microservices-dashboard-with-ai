@@ -106,8 +106,12 @@ jobs:
         with:
           version: 8
 
-      - name: Run frontend tests recursively
-        run: pnpm -r --filter "frontend/**" exec jest --passWithNoTests
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Test Frontend
+        working-directory: ./frontend
+        run: pnpm exec jest --passWithNoTests
 
   # ========================
   # Mobile tests
