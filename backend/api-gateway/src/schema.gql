@@ -1,0 +1,21 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type DashboardStat {
+  title: String!
+  trend: String
+  trendValue: String
+  value: Int!
+}
+
+type Query {
+  dashboardStats: [DashboardStat!]!
+  user(id: String!): User
+  users: [User!]!
+}
+
+type User {
+  id: ID!
+  name: String!
+}

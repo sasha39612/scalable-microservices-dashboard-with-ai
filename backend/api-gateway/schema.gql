@@ -1,0 +1,12 @@
+# src/schema.gql
+
+type DashboardStat {
+  title: String!
+  value: Int!
+  trend: String
+  trendValue: Float
+}
+
+type Query {
+  dashboardStats: [DashboardStat!]!
+}

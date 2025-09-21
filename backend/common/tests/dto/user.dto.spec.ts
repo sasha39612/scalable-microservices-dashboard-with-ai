@@ -1,19 +1,23 @@
 import { validate } from 'class-validator';
-import { CreateUserDto } from '../../src/dto/user.dto';
+import { CreateUserInput } from '../../src/dto/user.dto';
 
 
-describe('CreateUserDto', () => {
-  it('should fail validation with empty fields', async () => {
-    const dto = new CreateUserDto();
-    const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
-  });
-
+describe('CreateUserInput', () => {
   it('should pass validation with correct fields', async () => {
-    const dto = new CreateUserDto();
-    dto.email = 'alice@example.com';
-    dto.password = 'qwe123';
+    const dto = Object.assign(new CreateUserInput(), {
+      email: 'alice@example.com',
+      password: 'qwe123',
+      name: 'Alice',
+    });
+
     const errors = await validate(dto);
     expect(errors.length).toBe(0);
+  });
+
+  it('should fail validation with empty fields', async () => {
+    const dto = new CreateUserInput(); // all fields empty
+
+    const errors = await validate(dto);
+    expect(errors.length).toBeGreaterThan(0);
   });
 });
