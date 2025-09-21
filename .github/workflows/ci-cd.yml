@@ -79,7 +79,7 @@ jobs:
           pnpm --version
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install
 
       - name: Test API Gateway
         working-directory: ./backend/api-gateway
