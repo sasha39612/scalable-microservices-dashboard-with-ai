@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException, ExecutionContext } from '@nestjs/common';
 import { GqlAuthGuard } from '../../src/modules/auth/auth.guard';
 import { JwtService } from '@nestjs/jwt';
 import { GqlExecutionContext } from '@nestjs/graphql';
@@ -25,7 +25,8 @@ describe('GqlAuthGuard', () => {
       getContext: () => ({ req }),
     });
 
-    expect(guard.canActivate({} as any)).toBe(true);
+    const ctx = {} as ExecutionContext;
+    expect(guard.canActivate(ctx)).toBe(true);
     expect(req.user).toEqual({ userId: '123' });
   });
 
@@ -35,8 +36,9 @@ describe('GqlAuthGuard', () => {
       getContext: () => ({ req }),
     });
 
-    expect(() => guard.canActivate({} as any)).toThrow(UnauthorizedException);
-    expect(() => guard.canActivate({} as any)).toThrow('No authorization header');
+    const ctx = {} as ExecutionContext;
+    expect(() => guard.canActivate(ctx)).toThrow(UnauthorizedException);
+    expect(() => guard.canActivate(ctx)).toThrow('No authorization header');
   });
 
   it('should throw UnauthorizedException if token is invalid', () => {
@@ -48,7 +50,8 @@ describe('GqlAuthGuard', () => {
       getContext: () => ({ req }),
     });
 
-    expect(() => guard.canActivate({} as any)).toThrow(UnauthorizedException);
-    expect(() => guard.canActivate({} as any)).toThrow('Invalid or expired token');
+    const ctx = {} as ExecutionContext;
+    expect(() => guard.canActivate(ctx)).toThrow(UnauthorizedException);
+    expect(() => guard.canActivate(ctx)).toThrow('Invalid or expired token');
   });
 });

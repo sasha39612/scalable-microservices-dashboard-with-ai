@@ -11,8 +11,8 @@ jest.mock('bcrypt', () => ({
 
 describe('AuthService', () => {
   let service: AuthService;
-  let userService: Partial<Record<keyof UserService, jest.Mock>>;
-  let jwtService: Partial<Record<keyof JwtService, jest.Mock>>;
+  let userService: jest.Mocked<UserService>;
+  let jwtService: jest.Mocked<JwtService>;
 
   const mockUser = { id: '1', email: 'test@test.com', password: 'hashed-password', name: 'Test User' };
 
@@ -21,14 +21,14 @@ describe('AuthService', () => {
       create: jest.fn().mockResolvedValue(mockUser),
       findByEmail: jest.fn(),
       findOne: jest.fn(),
-    };
+    } as unknown as jest.Mocked<UserService>;
 
-    jwtService = {
-      signAsync: jest.fn().mockResolvedValue('jwt-token'),
-    };
+  jwtService = {
+    signAsync: jest.fn().mockResolvedValue('jwt-token'),
+  } as unknown as jest.Mocked<JwtService>;
 
-    service = new AuthService(userService as any, jwtService as any);
-  });
+  service = new AuthService(userService, jwtService);
+});
 
   it('signup should hash password and create user', async () => {
     const result = await service.signup('test@test.com', 'password', 'Test User');

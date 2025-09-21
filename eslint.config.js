@@ -1,12 +1,14 @@
 // eslint.config.js
-const { FlatCompat } = require("@eslint/eslintrc");
+import { FlatCompat } from "@eslint/eslintrc";
+import eslintPluginReact from "eslint-plugin-react";
+import tseslint from "@typescript-eslint/eslint-plugin";
 
 const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: {}, // must be an object, not `true`
+  baseDirectory: import.meta.dirname,
+  recommendedConfig: {}, // must be an object
 });
 
-module.exports = [
+export default [
   ...compat.extends("eslint:recommended"),
   ...compat.extends("plugin:@typescript-eslint/recommended"),
   ...compat.extends("plugin:react/recommended"),
@@ -21,8 +23,8 @@ module.exports = [
     },
 
     plugins: {
-      react: require("eslint-plugin-react"),
-      "@typescript-eslint": require("@typescript-eslint/eslint-plugin"),
+      react: eslintPluginReact,
+      "@typescript-eslint": tseslint,
     },
 
     rules: {

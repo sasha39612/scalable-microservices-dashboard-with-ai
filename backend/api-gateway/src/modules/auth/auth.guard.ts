@@ -20,7 +20,7 @@ export class GqlAuthGuard extends PassportAuthGuard('jwt') {
     try {
       const payload = this.jwtService.verify(token);
       req.user = payload;
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
 

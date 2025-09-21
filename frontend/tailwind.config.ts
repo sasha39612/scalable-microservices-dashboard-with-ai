@@ -1,6 +1,6 @@
-import { title } from "process";
 import type { Config } from "tailwindcss";
 import plugin from "tailwindcss/plugin";
+import type { PluginAPI } from "tailwindcss/types/config";
 
 const config: Config = {
   content: [
@@ -72,7 +72,7 @@ const config: Config = {
     },
   },
   plugins: [
-    plugin(function ({ addVariant }: any) {
+    plugin(function ({ addVariant }: PluginAPI) {
       addVariant("hocus", ["&:hover", "&:focus"]);
     }),
   ],
