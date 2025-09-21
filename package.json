@@ -20,11 +20,18 @@
     "deploy:prod": "echo 'Deploying to production... (replace with real command)'"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
     "@types/jest": "^30.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
     "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-define-config": "^2.1.0",
+    "eslint-plugin-react": "^7.37.5",
     "husky": "^9.1.7",
     "jest": "^30.1.3",
     "lint-staged": "^16.1.6",
+    "prettier": "^3.6.2",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2"
   },
