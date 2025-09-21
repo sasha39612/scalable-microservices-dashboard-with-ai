@@ -11,19 +11,22 @@
     "prettier:check": "prettier --check '**/*'.{jsx,js,ts,tsx}"
   },
   "dependencies": {
+    "@apollo/client": "^4.0.5",
     "dotenv": "^17.2.1",
+    "graphql": "^16.11.0",
     "he": "^1.2.0",
     "lucide-react": "^0.539.0",
     "next": "^15.1.7",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-icons": "^5.5.0"
   },
   "devDependencies": {
     "@types/dotenv": "^6.1.1",
     "@types/he": "^1.2.3",
     "@types/lodash": "^4.17.20",
     "@types/node": "^20.19.10",
-    "@types/react": "^18",
+    "@types/react": "^18.3.24",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.21",
     "eslint": "^8",

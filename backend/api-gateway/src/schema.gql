@@ -11,11 +11,12 @@ type DashboardStat {
 
 type Query {
   dashboardStats: [DashboardStat!]!
-  user(id: String!): User
+  user(id: String!): User!
   users: [User!]!
 }
 
 type User {
+  email: String!
   id: ID!
   name: String!
 }
