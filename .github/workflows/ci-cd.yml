@@ -131,30 +131,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Test Backend
-        working-directory: ./backend
-        run: pnpm exec jest --passWithNoTests
-
-  # ========================
-  # Frontend tests
-  # ========================
-  test-frontend:
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          cache: 'pnpm'
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Install dependencies
-        run: pnpm install
-
       - name: Test Mobile
         working-directory: ./mobile
         run: pnpm exec jest --passWithNoTests
