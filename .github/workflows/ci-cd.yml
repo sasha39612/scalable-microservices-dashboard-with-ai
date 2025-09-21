@@ -13,7 +13,7 @@ on:
 jobs:
 
   # ========================
-  # Setup dependencies
+  # Setup cache only
   # ========================
   setup:
     runs-on: ubuntu-latest
@@ -21,24 +21,12 @@ jobs:
       cache-hit: ${{ steps.cache-deps.outputs.cache-hit }}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      - name: Install pnpm
-        run: |
-          npm install -g pnpm
-          # Remove the next line:
-          # echo "PATH=$(npm bin -g):$PATH" >> $GITHUB_ENV
 
       - id: cache-deps
         uses: actions/cache@v3
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-
-      - name: Install pnpm
-        run: npm install -g pnpm
 
   # ========================
   # Lint all projects
@@ -140,7 +128,7 @@ jobs:
   # ========================
   deploy:
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend, test-mobile, lint]
+    needs: [lint, test-backend, test-frontend, test-mobile]
     steps:
       - uses: actions/checkout@v3
 
