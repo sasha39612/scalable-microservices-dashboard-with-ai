@@ -18,21 +18,19 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      cache-hit: ${{ steps.cache-deps.outputs.cache-hit }}
+      cache-hit: ${{ steps.setup-node.outputs.cache-hit }}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: 'pnpm'
-      - run: npm install -g pnpm
-      - run: pnpm install
-      - id: cache-deps
-        uses: actions/cache@v3
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - run: pnpm install
+          cache: 'pnpm' # automatic pnpm caching
+
+      - name: Install dependencies
+        run: pnpm install
 
   # ========================
   # Lint all projects
@@ -45,9 +43,13 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: npm install -g pnpm
-      - run: pnpm install
-      - run: pnpm lint
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run ESLint
+        run: pnpm lint
 
   # ========================
   # Backend tests
@@ -60,10 +62,15 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: pnpm install
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
       - name: Test API Gateway
         working-directory: ./backend/api-gateway
         run: pnpm exec jest --passWithNoTests
+
       - name: Test Worker Service
         working-directory: ./backend/worker-service
         run: pnpm exec jest --passWithNoTests
@@ -79,7 +86,11 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: pnpm install
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
       - name: Test Frontend
         working-directory: ./frontend
         run: pnpm exec jest --passWithNoTests
@@ -95,7 +106,11 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: pnpm install
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
       - name: Test Mobile
         working-directory: ./mobile
         run: pnpm exec jest --passWithNoTests
@@ -107,21 +122,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-backend, test-frontend, test-mobile, lint]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      # Login to Docker Hub
-      - name: Log in to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Make deploy script executable
       - name: Make deploy script executable
         run: chmod +x ./scripts/deploy.sh
 
-      # Run the unified deploy script
       - name: Run deployment
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
@@ -131,5 +142,4 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
           ./scripts/deploy.sh
