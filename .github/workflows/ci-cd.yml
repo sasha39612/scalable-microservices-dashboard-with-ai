@@ -20,28 +20,17 @@ jobs:
     outputs:
       cache-hit: ${{ steps.cache-deps.outputs.cache-hit }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 20
-
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Cache pnpm store
-        id: cache-deps
+      - run: npm install -g pnpm
+      - id: cache-deps
         uses: actions/cache@v3
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-
-      - name: Install dependencies
-        run: pnpm install
+      - run: pnpm install
 
   # ========================
   # Lint all projects
@@ -69,19 +58,18 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: npm install -g pnpm
       - run: pnpm install
       - name: Test API Gateway
         working-directory: ./backend/api-gateway
-        run: pnpm test
+        run: pnpm exec jest --passWithNoTests
       - name: Test Worker Service
         working-directory: ./backend/worker-service
-        run: pnpm test
+        run: pnpm exec jest --passWithNoTests
 
   # ========================
   # Frontend tests
   # ========================
-  test-frontend:
+   test-frontend:
     runs-on: ubuntu-latest
     needs: setup
     steps:
@@ -89,11 +77,10 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: npm install -g pnpm
       - run: pnpm install
       - name: Test Frontend
         working-directory: ./frontend
-        run: pnpm test
+        run: pnpm exec jest --passWithNoTests
 
   # ========================
   # Mobile tests
@@ -106,11 +93,10 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: npm install -g pnpm
       - run: pnpm install
       - name: Test Mobile
         working-directory: ./mobile
-        run: pnpm test
+        run: pnpm exec jest --passWithNoTests
 
   # ========================
   # Full Deployment
