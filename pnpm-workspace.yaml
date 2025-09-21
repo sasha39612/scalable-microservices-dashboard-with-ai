@@ -1,0 +1,4 @@
+packages:
+  - "backend/api-gateway"
+  - "backend/worker-service"
+  - "backend/common"
