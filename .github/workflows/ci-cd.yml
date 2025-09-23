@@ -36,23 +36,18 @@ jobs:
     needs: setup
     steps:
       - uses: actions/checkout@v3
-
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-
       - uses: pnpm/action-setup@v2
         with:
           version: 8
-
       - name: Verify pnpm
         run: |
           which pnpm
           pnpm --version
-
       - name: Install dependencies
         run: pnpm install
-
       - name: Run ESLint
         run: pnpm lint
 
@@ -64,27 +59,21 @@ jobs:
     needs: setup
     steps:
       - uses: actions/checkout@v3
-
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-
       - uses: pnpm/action-setup@v2
         with:
           version: 8
-
       - name: Verify pnpm
         run: |
           which pnpm
           pnpm --version
-
       - name: Install dependencies
         run: pnpm install
-
       - name: Test API Gateway
         working-directory: ./backend/api-gateway
         run: pnpm exec jest --passWithNoTests
-
       - name: Test Worker Service
         working-directory: ./backend/worker-service
         run: pnpm exec jest --passWithNoTests
@@ -101,14 +90,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-
+          node-version: 20
       - name: Enable pnpm
         run: corepack enable && corepack prepare pnpm@latest --activate
-
       - name: Install dependencies
         run: pnpm install
-
       - name: Run tests
         run: pnpm exec jest --passWithNoTests
 
@@ -130,10 +116,8 @@ jobs:
         uses: pnpm/action-setup@v2
         with:
           version: 8
-
       - name: Install dependencies
         run: pnpm install
-
       - name: Run Tests
         working-directory: ./mobile
         run: pnpm exec jest --passWithNoTests
@@ -163,14 +147,15 @@ jobs:
       # 4️⃣ Setup SSH for server
       - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          mkdir -p $HOME/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > $HOME/.ssh/id_rsa
+          chmod 600 $HOME/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> $HOME/.ssh/known_hosts
 
       # 5️⃣ Run deployment script
       - name: Run deployment
         env:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
-        run: ./scripts/deploy.sh
+        run: |
+          ssh -i $HOME/.ssh/id_rsa $SERVER_USER@$SERVER_HOST "bash -s" < ./scripts/deploy.sh
