@@ -133,17 +133,11 @@ jobs:
 
       - name: Setup SSH
         run: |
-          mkdir -p $HOME/.ssh
-          echo "$SERVER_SSH_KEY" > $HOME/.ssh/id_rsa
-          chmod 600 $HOME/.ssh/id_rsa
-          ssh-keyscan -H $SERVER_HOST >> $HOME/.ssh/known_hosts
-        env:
-          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          mkdir -p ${{ github.workspace }}/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" | tr -d '\r' > ${{ github.workspace }}/.ssh/id_rsa
+          chmod 600 ${{ github.workspace }}/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ${{ github.workspace }}/.ssh/known_hosts
 
       - name: Run deployment
-        env:
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
         run: |
-          ssh -i $HOME/.ssh/id_rsa $SERVER_USER@$SERVER_HOST "bash -s" < ./scripts/deploy.sh
+          ssh -i ${{ github.workspace }}/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "bash -s" < ./scripts/deploy.sh
