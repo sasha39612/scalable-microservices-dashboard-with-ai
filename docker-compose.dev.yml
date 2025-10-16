@@ -1,59 +1,78 @@
+version: "3.9"
+
 services:
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: frontend/Dockerfile.dev
     container_name: frontend
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend/app:/app/app
+      - ./frontend/components:/app/components
+      - ./frontend/hooks:/app/hooks
+      - ./frontend/styles:/app/styles
+      - ./frontend/tests:/app/tests
+      - ./frontend/utils:/app/utils
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/next.config.mjs:/app/next.config.mjs
+      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs
+      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://api-gateway:4000/graphql
+    working_dir: /app
+    command: pnpm dev
     depends_on:
       - api-gateway
-    command: npm run dev
 
   api-gateway:
     build:
-      context: ./backend/api-gateway
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: backend/api-gateway/Dockerfile.dev
     container_name: api-gateway
     ports:
       - "4000:4000"
     volumes:
-      - ./backend/api-gateway:/app
-      - /app/node_modules
+      - ./backend/api-gateway/src:/app/backend/api-gateway/src
+      - ./backend/common/src:/app/backend/common/src
+      - ./backend/api-gateway/tests:/app/backend/api-gateway/tests
+      - ./backend/api-gateway/tsconfig.json:/app/backend/api-gateway/tsconfig.json
     environment:
       - NODE_ENV=development
-    command: npm run start:dev
+    working_dir: /app/backend/api-gateway
+    command: pnpm start:dev
+    depends_on:
+      - ai-service
+      - worker-service
 
   worker-service:
     build:
-      context: ./backend/worker-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: backend/worker-service/Dockerfile.dev
     container_name: worker-service
     ports:
       - "4001:4001"
     volumes:
-      - ./backend/worker-service:/app
-      - /app/node_modules
+      - ./backend/worker-service/src:/app/backend/worker-service/src
+      - ./backend/common/src:/app/backend/common/src
     environment:
       - NODE_ENV=development
-    command: npm run start:dev
+    working_dir: /app/backend/worker-service
+    command: pnpm start:dev
 
   ai-service:
     build:
-      context: ./backend/ai-service
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: backend/ai-service/Dockerfile.dev
     container_name: ai-service
     ports:
       - "5000:5000"
     volumes:
-      - ./backend/ai-service:/app
-      - /app/node_modules
+      - ./backend/ai-service/src:/app/backend/ai-service/src
+      - ./backend/common/src:/app/backend/common/src
     environment:
       - NODE_ENV=development
-    command: npm run start:dev
+    working_dir: /app/backend/ai-service
+    command: pnpm start:dev

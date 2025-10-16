@@ -1,13 +1,24 @@
 FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /app/backend/worker-service
 
-COPY package*.json ./
-RUN npm install
+# Install pnpm globally
+RUN npm install -g pnpm
 
-COPY tsconfig.json ./
-COPY ./src ./src
+# Copy package.json first (for caching)
+COPY backend/worker-service/package.json ./
 
+# Copy common shared code
+COPY backend/common ../common
+
+# Copy service source code
+COPY backend/worker-service ./
+
+# Install dependencies including devDependencies
+RUN pnpm install --include=dev
+
+# Expose port
 EXPOSE 4001
 
-CMD ["npm", "run", "start:dev"]
+# Start service
+CMD ["pnpm", "start:dev"]

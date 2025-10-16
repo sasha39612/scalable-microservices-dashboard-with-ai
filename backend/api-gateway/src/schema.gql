@@ -2,11 +2,21 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input CreateUserInput {
+  email: String!
+  name: String!
+  password: String!
+}
+
 type DashboardStat {
   title: String!
   trend: String
   trendValue: String
   value: Int!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
 }
 
 type Query {

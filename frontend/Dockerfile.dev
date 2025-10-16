@@ -1,19 +1,36 @@
-# Use Node LTS
+# Use Node.js 20 Alpine as base
 FROM node:20-alpine
 
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Set working directory
 WORKDIR /app
 
-# Copy package files first for caching
-COPY package*.json ./
+# Configure Next.js
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=development
+
+# Copy package files
+COPY frontend/package.json ./package.json
+COPY frontend/tsconfig.json ./tsconfig.json
+COPY frontend/next.config.mjs ./next.config.mjs
+COPY frontend/postcss.config.mjs ./postcss.config.mjs
+COPY frontend/tailwind.config.ts ./tailwind.config.ts
 
 # Install dependencies
-RUN npm install
+RUN pnpm install
 
-# Copy all source code
-COPY . .
+# Copy the rest of the application
+COPY frontend/app ./app
+COPY frontend/components ./components
+COPY frontend/hooks ./hooks
+COPY frontend/styles ./styles
+COPY frontend/tests ./tests
+COPY frontend/utils ./utils
 
-# Expose port for Next.js dev
+# Expose port for Next.js
 EXPOSE 3000
 
-# Start Next.js in dev mode
-CMD ["npm", "run", "dev"]
+# Start development server
+CMD ["pnpm", "dev"]

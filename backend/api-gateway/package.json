@@ -9,6 +9,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
+    "@apollo/server": "^4.9.5",
     "@nestjs/apollo": "^13.1.0",
     "@nestjs/common": "^11.1.6",
     "@nestjs/core": "^11.1.6",
@@ -23,7 +24,7 @@
     "graphql": "^16.11.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
-    "common": "workspace:*",
+    "common": "file:../common",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "winston": "^3.9.0"

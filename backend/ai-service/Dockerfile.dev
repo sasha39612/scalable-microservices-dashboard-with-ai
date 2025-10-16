@@ -1,24 +1,24 @@
-# Use Node.js LTS
 FROM node:20-alpine
 
-# Set working directory
-WORKDIR /app
-
-# Copy package.json and pnpm-lock.yaml (if using pnpm)
-COPY package.json pnpm-lock.yaml* ./
+WORKDIR /app/backend/ai-service
 
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Install dependencies
-RUN pnpm install
+# Copy package.json first (for caching)
+COPY backend/ai-service/package.json ./
 
-# Copy tsconfig and source code
-COPY tsconfig.json ./
-COPY ./src ./src
+# Copy common shared code
+COPY backend/common ../common
 
-# Expose the port the dev server will use
+# Copy service source code
+COPY backend/ai-service ./
+
+# Install dependencies including devDependencies
+RUN pnpm install --include=dev
+
+# Expose port
 EXPOSE 5000
 
-# Start NestJS in dev mode with hot reload
-CMD ["pnpm", "run", "start:dev"]
+# Start service
+CMD ["pnpm", "start:dev"]
