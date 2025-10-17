@@ -35,7 +35,8 @@
     "lint-staged": "^16.1.6",
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.4",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "snyk": "^1.1234.0"
   },
   "dependencies": {
     "react-icons": "^5.5.0",
