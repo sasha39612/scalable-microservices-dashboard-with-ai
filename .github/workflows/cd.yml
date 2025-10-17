@@ -7,10 +7,10 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/frontend
-  API_GATEWAY_IMAGE: ghcr.io/${{ github.repository }}/api-gateway
-  AI_SERVICE_IMAGE: ghcr.io/${{ github.repository }}/ai-service
-  WORKER_SERVICE_IMAGE: ghcr.io/${{ github.repository }}/worker-service
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/scalable-microservices-dashboard-with-ai/frontend
+  API_GATEWAY_IMAGE: ghcr.io/${{ github.repository_owner }}/scalable-microservices-dashboard-with-ai/api-gateway
+  AI_SERVICE_IMAGE: ghcr.io/${{ github.repository_owner }}/scalable-microservices-dashboard-with-ai/ai-service
+  WORKER_SERVICE_IMAGE: ghcr.io/${{ github.repository_owner }}/scalable-microservices-dashboard-with-ai/worker-service
 
 jobs:
   build-and-push:
