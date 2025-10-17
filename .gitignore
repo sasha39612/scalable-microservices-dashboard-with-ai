@@ -15,6 +15,7 @@ build/
 out/
 .expo/
 .expo-shared/
+server.rb
 
 # TypeScript
 *.tsbuildinfo
