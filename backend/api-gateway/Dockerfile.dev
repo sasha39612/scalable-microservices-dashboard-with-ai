@@ -5,8 +5,9 @@ WORKDIR /app/backend/api-gateway
 # Install global dependencies
 RUN npm install -g pnpm ts-node-dev
 
-# Copy package files
+# Copy package and config files
 COPY backend/api-gateway/package.json ./package.json
+COPY backend/api-gateway/tsconfig.json ./tsconfig.json
 COPY backend/common ../common/
 
 # Install common module first
@@ -16,11 +17,16 @@ RUN pnpm install --no-frozen-lockfile
 # Return to api-gateway and install its dependencies
 WORKDIR /app/backend/api-gateway
 RUN pnpm install --no-frozen-lockfile && \
-    pnpm add @as-integrations/express5
+    pnpm add @as-integrations/express5 && \
+    pnpm add @types/node @nestjs/cli
 
 # Copy source files
 COPY backend/api-gateway/src ./src/
 COPY backend/api-gateway/tests ./tests/
+
+# Set environment variables for TypeScript
+ENV TS_NODE_PROJECT=tsconfig.json
+ENV TS_NODE_TRANSPILE_ONLY=true
 
 # Expose the NestJS gateway port
 EXPOSE 4000

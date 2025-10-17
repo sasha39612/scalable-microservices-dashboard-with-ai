@@ -12,138 +12,151 @@ on:
 
 jobs:
 
-  # ========================
-  # Setup cache only
-  # ========================
+  # ========================================================
+  # Setup / Cache dependencies
+  # ========================================================
   setup:
     runs-on: ubuntu-latest
     outputs:
       cache-hit: ${{ steps.cache-deps.outputs.cache-hit }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: cache-deps
         uses: actions/cache@v3
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-  # ========================
+  # ========================================================
   # Lint all projects
-  # ========================
+  # ========================================================
   lint:
     runs-on: ubuntu-latest
     needs: setup
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
       - uses: pnpm/action-setup@v2
         with:
           version: 8
-      - name: Verify pnpm
-        run: |
-          which pnpm
-          pnpm --version
       - name: Install dependencies
         run: pnpm install
       - name: Run ESLint
         run: pnpm lint
 
-  # ========================
-  # Backend tests
-  # ========================
+  # ========================================================
+  # Backend tests (matrix: api-gateway, worker-service, ai-service)
+  # ========================================================
   test-backend:
     runs-on: ubuntu-latest
     needs: setup
+    strategy:
+      matrix:
+        service: [api-gateway, worker-service, ai-service]
+    services:
+      postgres:
+        image: postgres:15
+        ports: [5432:5432]
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+      redis:
+        image: redis:7
+        ports: [6379:6379]
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
       - uses: pnpm/action-setup@v2
         with:
           version: 8
-      - name: Verify pnpm
-        run: |
-          which pnpm
-          pnpm --version
       - name: Install dependencies
         run: pnpm install
-      - name: Test API Gateway
-        working-directory: ./backend/api-gateway
-        run: pnpm exec jest --passWithNoTests
-      - name: Test Worker Service
-        working-directory: ./backend/worker-service
+      - name: Run Jest tests
+        working-directory: ./backend/${{ matrix.service }}
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          REDIS_URL: redis://localhost:6379
         run: pnpm exec jest --passWithNoTests
 
-  # ========================
-  # Frontend tests
-  # ========================
+  # ========================================================
+  # Frontend tests (Next.js)
+  # ========================================================
   test-frontend:
     runs-on: ubuntu-latest
     needs: setup
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Enable pnpm
-        run: corepack enable && corepack prepare pnpm@latest --activate
-      - name: Install dependencies
-        run: pnpm install
-      - name: Run tests
-        run: pnpm exec jest --passWithNoTests
-
-  # ========================
-  # Mobile tests
-  # ========================
-  test-mobile:
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v2
         with:
           version: 8
       - name: Install dependencies
         run: pnpm install
-      - name: Run Tests
-        working-directory: ./mobile
+      - name: Run Jest tests
+        working-directory: ./frontend
         run: pnpm exec jest --passWithNoTests
 
-  # ========================
-  # Full Deployment
-  # ========================
+  # ========================================================
+  # Docker build & push (backend + ai)
+  # ========================================================
+  docker-build-push:
+    runs-on: ubuntu-latest
+    needs: [lint, test-backend, test-frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GitHub Container Registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker images
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/api-gateway:latest ./backend/api-gateway
+          docker build -t ghcr.io/${{ github.repository }}/worker-service:latest ./backend/worker-service
+          docker build -t ghcr.io/${{ github.repository }}/ai-service:latest ./backend/ai-service
+
+      - name: Push Docker images
+        run: |
+          docker push ghcr.io/${{ github.repository }}/api-gateway:latest
+          docker push ghcr.io/${{ github.repository }}/worker-service:latest
+          docker push ghcr.io/${{ github.repository }}/ai-service:latest
+
+  # ========================================================
+  # Deployment (conditional: staging vs production)
+  # ========================================================
   deploy:
     runs-on: ubuntu-latest
-    needs: [lint, test-backend, test-frontend, test-mobile]
+    needs: [docker-build-push]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup SSH
         run: |
-          mkdir -p $HOME/.ssh
-          echo "$SERVER_SSH_KEY" | tr -d '\r' > $HOME/.ssh/id_rsa
-          chmod 600 $HOME/.ssh/id_rsa
-          ssh-keyscan -H $SERVER_HOST >> $HOME/.ssh/known_hosts
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
         env:
-          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
 
-      - name: Run deployment
+      - name: Deploy to staging (develop branch)
+        if: github.ref == 'refs/heads/develop'
         env:
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER_DEV }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST_DEV }}
         run: |
-          ssh -i $HOME/.ssh/id_rsa $SERVER_USER@$SERVER_HOST "bash -s" < ./scripts/deploy.sh
+          ssh -i ~/.ssh/id_rsa $SERVER_USER@$SERVER_HOST "bash -s" < ./scripts/deploy-staging.sh
+
+      - name: Deploy to production (master branch)
+        if: github.ref == 'refs/heads/master'
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER_PROD }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST_PROD }}
+        run: |
+          ssh -i ~/.ssh/id_rsa $SERVER_USER@$SERVER_HOST "bash -s" < ./scripts/deploy-prod.sh

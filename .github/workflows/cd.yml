@@ -1,0 +1,139 @@
+name: CD
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+
+env:
+  REGISTRY: ghcr.io
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/frontend
+  API_GATEWAY_IMAGE: ghcr.io/${{ github.repository }}/api-gateway
+  AI_SERVICE_IMAGE: ghcr.io/${{ github.repository }}/ai-service
+  WORKER_SERVICE_IMAGE: ghcr.io/${{ github.repository }}/worker-service
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.FRONTEND_IMAGE }}
+            ${{ env.API_GATEWAY_IMAGE }}
+            ${{ env.AI_SERVICE_IMAGE }}
+            ${{ env.WORKER_SERVICE_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=sha,format=long
+            type=ref,event=branch
+
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: frontend/Dockerfile.dev
+          push: true
+          tags: ${{ env.FRONTEND_IMAGE }}:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache,mode=max
+
+      - name: Build and push API Gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/api-gateway/Dockerfile.dev
+          push: true
+          tags: ${{ env.API_GATEWAY_IMAGE }}:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.API_GATEWAY_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.API_GATEWAY_IMAGE }}:buildcache,mode=max
+
+      - name: Build and push AI Service
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/ai-service/Dockerfile.dev
+          push: true
+          tags: ${{ env.AI_SERVICE_IMAGE }}:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.AI_SERVICE_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.AI_SERVICE_IMAGE }}:buildcache,mode=max
+
+      - name: Build and push Worker Service
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/worker-service/Dockerfile.dev
+          push: true
+          tags: ${{ env.WORKER_SERVICE_IMAGE }}:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.WORKER_SERVICE_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.WORKER_SERVICE_IMAGE }}:buildcache,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1.8.0
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Deploy to local Kubernetes
+        run: |
+          # Create namespace
+          kubectl create namespace dashboard-app
+
+          # Update image tags in Kubernetes manifests
+          VERSION=${{ steps.meta.outputs.version }}
+          sed -i "s|image:.*frontend.*|image: ${{ env.FRONTEND_IMAGE }}:${VERSION}|" k8s/frontend.yaml
+          sed -i "s|image:.*api-gateway.*|image: ${{ env.API_GATEWAY_IMAGE }}:${VERSION}|" k8s/api-gateway.yaml
+          sed -i "s|image:.*ai-service.*|image: ${{ env.AI_SERVICE_IMAGE }}:${VERSION}|" k8s/ai-service.yaml
+          sed -i "s|image:.*worker-service.*|image: ${{ env.WORKER_SERVICE_IMAGE }}:${VERSION}|" k8s/worker-service.yaml
+          
+          # Apply Kubernetes manifests
+          kubectl apply -f k8s/ -n dashboard-app
+
+      - name: Wait for deployments
+        run: |
+          kubectl wait --for=condition=available --timeout=300s deployment/frontend -n dashboard-app
+          kubectl wait --for=condition=available --timeout=300s deployment/api-gateway -n dashboard-app
+          kubectl wait --for=condition=available --timeout=300s deployment/ai-service -n dashboard-app
+          kubectl wait --for=condition=available --timeout=300s deployment/worker-service -n dashboard-app
+
+      - name: Test deployment
+        run: |
+          kubectl get all -n dashboard-app
+          kubectl describe deployments -n dashboard-app

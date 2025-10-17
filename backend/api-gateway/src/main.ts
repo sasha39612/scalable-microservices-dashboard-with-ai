@@ -2,12 +2,21 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule); // Nest auto-uses Express 4
+  const app = await NestFactory.create(AppModule);
+  
+  // Configure CORS based on environment
+  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
   app.enableCors({
-    origin: 'http://localhost:3000', // allow frontend
+    origin: corsOrigin,
     credentials: true,
   });
-  await app.listen(4000);
-  console.log('GraphQL server running on http://localhost:4000/graphql');
+
+  const port = process.env.PORT || 4000;
+  await app.listen(port, '0.0.0.0');
+  console.log(`GraphQL server running on http://localhost:${port}/graphql`);
 }
-bootstrap();
+
+bootstrap().catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});
