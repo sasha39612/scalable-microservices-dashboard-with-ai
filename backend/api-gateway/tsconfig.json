@@ -11,8 +11,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "dist",
-    "composite": true
-
+    "composite": true,
+    "isolatedModules": true
   },
   "include": ["src"]
 }
