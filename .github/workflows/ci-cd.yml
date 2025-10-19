@@ -88,14 +88,14 @@ jobs:
           version: 8
       - name: Install dependencies
         run: pnpm install
-      - name: Run Jest tests --if-present
+      - name: Run Jest tests
         working-directory: ./backend/${{ matrix.service }}
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
           REDIS_URL: redis://localhost:6379
         run: |
           echo "Running tests for ${{ matrix.service }}..."
-          pnpm run test || echo "No tests found for ${{ matrix.service }} — skipping."
+          pnpm run test --if-present
 
   # ========================================================
   # Frontend tests (Next.js)
@@ -141,9 +141,9 @@ jobs:
           version: 8
       - name: Install dependencies
         run: pnpm install
-      - name: Run Jest tests --if-present
+      - name: Run Jest tests
         working-directory: ./frontend
-        run: pnpm exec jest --passWithNoTests
+        run: pnpm exec jest --if-present
 
   # ========================================================
   # Docker build & push (backend + ai)
