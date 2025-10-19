@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "prettier": "prettier --write '**/*'.{jsx,js,ts,tsx}",
-    "prettier:check": "prettier --check '**/*'.{jsx,js,ts,tsx}"
+    "prettier:check": "prettier --check '**/*'.{jsx,js,ts,tsx}",
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@apollo/client": "^4.0.5",
