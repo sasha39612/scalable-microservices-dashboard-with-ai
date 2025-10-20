@@ -63,9 +63,21 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: testdb
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
       redis:
         image: redis:7
         ports: [6379:6379]
+      options: >-
+        --health-cmd="redis-cli ping"
+        --health-interval=10s
+        --health-timeout=5s
+        --health-retries=5
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -81,7 +93,9 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
           REDIS_URL: redis://localhost:6379
-        run: pnpm exec jest --passWithNoTests
+        run: |
+          echo "Running tests for ${{ matrix.service }}..."
+          pnpm run test --if-present
 
   # ========================================================
   # Frontend tests (Next.js)
@@ -107,7 +121,12 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --all-projects
+          command: test
+          args: --all-projects --sarif-file-output=snyk.sarif
+      - name: Upload Snyk results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
 
   test-frontend:
     runs-on: ubuntu-latest
@@ -124,7 +143,7 @@ jobs:
         run: pnpm install
       - name: Run Jest tests
         working-directory: ./frontend
-        run: pnpm exec jest --passWithNoTests
+        run: pnpm exec jest --if-present
 
   # ========================================================
   # Docker build & push (backend + ai)
