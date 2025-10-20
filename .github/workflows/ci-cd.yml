@@ -1,5 +1,8 @@
 name: CI/CD Monorepo
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
