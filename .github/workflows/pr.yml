@@ -3,9 +3,7 @@ name: Development PR
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches:
-      - master
-      - develop
+    branches: ["**"]
 
 jobs:
   validate:

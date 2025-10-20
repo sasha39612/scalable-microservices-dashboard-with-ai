@@ -3,9 +3,9 @@ name: "CodeQL Analysis"
 # Trigger on pushes, PRs, and scheduled scans
 on:
   push:
-    branches: [ master ]
+    branches: [ "**" ]
   pull_request:
-    branches: [ master ]
+    branches: [ "**" ]
   schedule:
     - cron: '0 3 * * 0'  # Every Sunday at 03:00 UTC
 
