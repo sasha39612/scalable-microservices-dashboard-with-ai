@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "test:connection": "ts-node tests/db/test-connection.ts"
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",

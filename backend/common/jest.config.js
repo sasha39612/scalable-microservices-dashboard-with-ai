@@ -2,7 +2,7 @@ module.exports = {
   verbose: true,
   testEnvironment: "node",
   transform: {
-    "^.+\\.(ts|tsx)$": "ts-jest",
+    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "tsconfig.json" }],
   },
   moduleFileExtensions: ["ts", "tsx", "js", "json"],
   collectCoverageFrom: [
@@ -11,4 +11,7 @@ module.exports = {
     "!**/dist/**",
     "!**/build/**",
   ],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
 };

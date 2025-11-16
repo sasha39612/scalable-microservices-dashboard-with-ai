@@ -8,3 +8,4 @@ export * from "./errors/AppError";
 export * from "./errors/error.code";
 export * from "./logging/logger";
 export * from "./config";
+export * from "./db/connection";

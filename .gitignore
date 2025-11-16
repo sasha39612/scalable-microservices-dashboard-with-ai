@@ -39,6 +39,14 @@ lcov-report/
 .env.test.local
 .env.production.local
 
+# Database credentials and sensitive information
+DATABASE_CREDENTIALS.md
+*credentials*.md
+*secrets*.txt
+*.pem
+*.key
+*.crt
+
 # Docker
 .docker/
 docker-compose.override.yml

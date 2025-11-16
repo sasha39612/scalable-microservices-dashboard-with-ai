@@ -13,8 +13,7 @@
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
     "strict": true,
-    "target": "ES2021",
-    "module": "CommonJS"
+    "target": "ES2021"
   },
   "include": ["src/**/*", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist", "tests"]
