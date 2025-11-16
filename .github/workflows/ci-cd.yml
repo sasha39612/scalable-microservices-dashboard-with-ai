@@ -175,21 +175,29 @@ jobs:
     needs: [docker-build-push]
     steps:
       - uses: actions/checkout@v4
-      - name: Start ssh-agent and add key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
       - name: Deploy to staging (develop branch)
         if: github.ref == 'refs/heads/develop'
         env:
           SERVER_USER: ${{ secrets.SERVER_USER_DEV }}
           SERVER_HOST: ${{ secrets.SERVER_HOST_DEV }}
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
         run: |
+          if [ -z "$SERVER_USER" ] || [ -z "$SERVER_HOST" ] || [ -z "$SSH_KEY" ]; then
+            echo "Skipping deploy (develop) because required secrets are missing."; exit 0;
+          fi
+          eval "$(ssh-agent -s)"
+          ssh-add <(printf "%s" "$SSH_KEY")
           ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "bash -s" < ./scripts/deploy.sh
       - name: Deploy to production (master branch)
         if: github.ref == 'refs/heads/master'
         env:
           SERVER_USER: ${{ secrets.SERVER_USER_PROD }}
           SERVER_HOST: ${{ secrets.SERVER_HOST_PROD }}
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
         run: |
+          if [ -z "$SERVER_USER" ] || [ -z "$SERVER_HOST" ] || [ -z "$SSH_KEY" ]; then
+            echo "Skipping deploy (master) because required secrets are missing."; exit 0;
+          fi
+          eval "$(ssh-agent -s)"
+          ssh-add <(printf "%s" "$SSH_KEY")
           ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "bash -s" < ./scripts/deploy.sh
