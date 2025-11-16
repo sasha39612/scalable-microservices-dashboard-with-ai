@@ -45,7 +45,7 @@ COPY backend/worker-service/package.json ./backend/worker-service/
 COPY backend/common/package.json ./backend/common/
 
 # Install only production dependencies
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy built application from builder stage
 COPY --from=builder /app/backend/worker-service/dist ./backend/worker-service/dist

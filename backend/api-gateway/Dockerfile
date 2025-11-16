@@ -45,7 +45,7 @@ COPY backend/api-gateway/package.json ./backend/api-gateway/
 COPY backend/common/package.json ./backend/common/
 
 # Install only production dependencies
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy built application from builder stage
 COPY --from=builder /app/backend/api-gateway/dist ./backend/api-gateway/dist

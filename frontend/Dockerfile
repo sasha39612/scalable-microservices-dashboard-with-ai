@@ -50,7 +50,7 @@ COPY frontend/next.config.mjs ./frontend/next.config.mjs
 
 # Install only production dependencies
 WORKDIR /app/frontend
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy built application from builder
 COPY --from=builder /app/frontend/.next ./.next
