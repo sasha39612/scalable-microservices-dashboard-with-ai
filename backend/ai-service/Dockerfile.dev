@@ -2,23 +2,19 @@ FROM node:20-alpine
 
 WORKDIR /app/backend/ai-service
 
-# Install pnpm globally
-RUN npm install -g pnpm
+# Install pnpm and ts-node-dev globally
+RUN npm install -g pnpm ts-node-dev
 
-# Copy package.json first (for caching)
+# Copy dependency files
 COPY backend/ai-service/package.json ./
 
-# Copy common shared code
-COPY backend/common ../common
-
-# Copy service source code
-COPY backend/ai-service ./
-
-# Install dependencies including devDependencies
+# Install dependencies including dev
 RUN pnpm install --include=dev
 
-# Expose port
+# Copy full source (not just src)
+COPY backend/ai-service ./
+COPY backend/common ../common
+
 EXPOSE 5000
 
-# Start service
 CMD ["pnpm", "start:dev"]

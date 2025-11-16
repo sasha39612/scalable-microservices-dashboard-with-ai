@@ -2,20 +2,20 @@ FROM node:20-alpine
 
 WORKDIR /app/backend/worker-service
 
-# Install pnpm globally
-RUN npm install -g pnpm
+# Install pnpm and ts-node-dev globally
+RUN npm install -g pnpm ts-node-dev
 
 # Copy package.json first (for caching)
 COPY backend/worker-service/package.json ./
+
+# Install dependencies including devDependencies
+RUN pnpm install --include=dev
 
 # Copy common shared code
 COPY backend/common ../common
 
 # Copy service source code
 COPY backend/worker-service ./
-
-# Install dependencies including devDependencies
-RUN pnpm install --include=dev
 
 # Expose port
 EXPOSE 4001
