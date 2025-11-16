@@ -2,6 +2,7 @@ name: CI/CD Monorepo
 
 permissions:
   contents: read
+  packages: write
   security-events: write
 
 on:
