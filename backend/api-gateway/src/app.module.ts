@@ -9,6 +9,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { AIModule } from './modules/ai/ai.module';
 import { HealthController } from './health.controller';
+import { WorkerClient } from './services/worker.client';
+import { AIClient } from './services/ai.client';
 
 @Module({
   imports: [
@@ -25,5 +27,6 @@ import { HealthController } from './health.controller';
     AIModule,
   ],
   controllers: [HealthController],
+  providers: [WorkerClient, AIClient],
 })
 export class AppModule {}

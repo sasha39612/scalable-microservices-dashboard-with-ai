@@ -100,6 +100,33 @@ microservices-dashboard/
 * **DevOps:** Docker, Docker Compose, GitHub Actions CI/CD, Vercel, Railway / AWS
 * **Testing:** Jest, React Testing Library
 
+## 🏥 Health Checks
+
+Comprehensive health monitoring is implemented across all services:
+
+* **API Gateway:** `/health` (basic) and `/health/detailed` (with all service statuses)
+* **Worker Service:** `/health` (includes queue statistics)
+* **AI Service:** `/health` (includes available models)
+
+Health checks are integrated with:
+- Kubernetes readiness and liveness probes
+- Docker Compose service dependencies
+- Monitoring systems (Prometheus, Datadog, etc.)
+
+**Quick Test:**
+```bash
+# Test all services
+curl http://localhost:4000/health/detailed
+
+# Run integration tests
+./scripts/test-health-checks.sh
+```
+
+📖 **Documentation:**
+- [Health Checks Guide](docs/HEALTH_CHECKS.md)
+- [Implementation Details](docs/HEALTH_CHECKS_IMPLEMENTATION.md)
+- [Quick Reference](docs/HEALTH_CHECKS_QUICK_REF.md)
+
 ## 🚀 Deployment
 
 * **Backend & AI microservice:** Railway / AWS

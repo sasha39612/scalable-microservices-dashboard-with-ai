@@ -1,9 +1,131 @@
 import { Controller, Get } from '@nestjs/common';
+import { WorkerClient } from './services/worker.client';
+import { AIClient } from './services/ai.client';
+
+interface ServiceHealth {
+  status: 'healthy' | 'unhealthy' | 'degraded';
+  message?: string;
+  timestamp?: Date;
+  details?: Record<string, unknown>;
+}
+
+interface HealthCheckResponse {
+  status: 'healthy' | 'unhealthy' | 'degraded';
+  timestamp: Date;
+  services: {
+    apiGateway: ServiceHealth;
+    workerService: ServiceHealth;
+    aiService: ServiceHealth;
+  };
+  uptime: number;
+}
 
 @Controller('health')
 export class HealthController {
+  private readonly startTime: Date;
+
+  constructor(
+    private readonly workerClient: WorkerClient,
+    private readonly aiClient: AIClient,
+  ) {
+    this.startTime = new Date();
+  }
+
+  /**
+   * Basic health check endpoint
+   */
   @Get()
   check() {
-    return 'OK';
+    return {
+      status: 'healthy',
+      timestamp: new Date(),
+      uptime: Date.now() - this.startTime.getTime(),
+    };
+  }
+
+  /**
+   * Comprehensive health check including all services
+   */
+  @Get('detailed')
+  async detailedCheck(): Promise<HealthCheckResponse> {
+    const services = {
+      apiGateway: await this.checkApiGateway(),
+      workerService: await this.checkWorkerService(),
+      aiService: await this.checkAIService(),
+    };
+
+    // Determine overall status
+    const statuses = Object.values(services).map((s) => s.status);
+    let overallStatus: 'healthy' | 'unhealthy' | 'degraded' = 'healthy';
+    
+    if (statuses.includes('unhealthy')) {
+      overallStatus = 'unhealthy';
+    } else if (statuses.includes('degraded')) {
+      overallStatus = 'degraded';
+    }
+
+    return {
+      status: overallStatus,
+      timestamp: new Date(),
+      services,
+      uptime: Date.now() - this.startTime.getTime(),
+    };
+  }
+
+  /**
+   * Check API Gateway health
+   */
+  private async checkApiGateway(): Promise<ServiceHealth> {
+    return {
+      status: 'healthy',
+      message: 'API Gateway is running',
+      timestamp: new Date(),
+      details: {
+        uptime: Date.now() - this.startTime.getTime(),
+        version: process.env.npm_package_version || '1.0.0',
+      },
+    };
+  }
+
+  /**
+   * Check Worker Service health
+   */
+  private async checkWorkerService(): Promise<ServiceHealth> {
+    try {
+      const health = await this.workerClient.healthCheck();
+      return {
+        status: 'healthy',
+        message: 'Worker Service is operational',
+        timestamp: health.timestamp,
+        details: health,
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        message: error instanceof Error ? error.message : 'Worker Service unavailable',
+        timestamp: new Date(),
+      };
+    }
+  }
+
+  /**
+   * Check AI Service health
+   */
+  private async checkAIService(): Promise<ServiceHealth> {
+    try {
+      const health = await this.aiClient.healthCheck();
+      return {
+        status: 'healthy',
+        message: 'AI Service is operational',
+        timestamp: health.timestamp,
+        details: health,
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        message: error instanceof Error ? error.message : 'AI Service unavailable',
+        timestamp: new Date(),
+      };
+    }
   }
 }

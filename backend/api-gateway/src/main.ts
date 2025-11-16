@@ -13,10 +13,12 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4000;
   await app.listen(port, '0.0.0.0');
+  // eslint-disable-next-line no-console
   console.log(`GraphQL server running on http://localhost:${port}/graphql`);
 }
 
 bootstrap().catch(err => {
+  // eslint-disable-next-line no-console
   console.error('Failed to start server:', err);
   process.exit(1);
 });
