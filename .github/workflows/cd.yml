@@ -18,6 +18,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -38,13 +40,10 @@ jobs:
         with:
           images: |
             ${{ env.FRONTEND_IMAGE }}
-            ${{ env.API_GATEWAY_IMAGE }}
-            ${{ env.AI_SERVICE_IMAGE }}
-            ${{ env.WORKER_SERVICE_IMAGE }}
           tags: |
-            type=semver,pattern={{version}}
-            type=sha,format=long
             type=ref,event=branch
+            type=sha,format=long
+            type=semver,pattern={{version}}
 
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
@@ -52,7 +51,7 @@ jobs:
           context: .
           file: frontend/Dockerfile.dev
           push: true
-          tags: ${{ env.FRONTEND_IMAGE }}:${{ steps.meta.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache,mode=max
@@ -113,24 +112,34 @@ jobs:
 
       - name: Load images into kind cluster
         run: |
+          # Log in to GHCR to pull images
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          
           # Pull the images that were just pushed
-          VERSION=${{ needs.build-and-push.outputs.version || 'latest' }}
+          VERSION=${{ needs.build-and-push.outputs.version }}
           FRONTEND_IMAGE_TAG="${{ env.FRONTEND_IMAGE }}:${VERSION}"
           API_GATEWAY_IMAGE_TAG="${{ env.API_GATEWAY_IMAGE }}:${VERSION}"
           AI_SERVICE_IMAGE_TAG="${{ env.AI_SERVICE_IMAGE }}:${VERSION}"
           WORKER_SERVICE_IMAGE_TAG="${{ env.WORKER_SERVICE_IMAGE }}:${VERSION}"
 
           echo "🔽 Pulling images from GHCR..."
-          docker pull ${FRONTEND_IMAGE_TAG} || echo "⚠️ Failed to pull frontend"
-          docker pull ${API_GATEWAY_IMAGE_TAG} || echo "⚠️ Failed to pull api-gateway"
-          docker pull ${AI_SERVICE_IMAGE_TAG} || echo "⚠️ Failed to pull ai-service"
-          docker pull ${WORKER_SERVICE_IMAGE_TAG} || echo "⚠️ Failed to pull worker-service"
+          echo "  Frontend: ${FRONTEND_IMAGE_TAG}"
+          echo "  API Gateway: ${API_GATEWAY_IMAGE_TAG}"
+          echo "  AI Service: ${AI_SERVICE_IMAGE_TAG}"
+          echo "  Worker Service: ${WORKER_SERVICE_IMAGE_TAG}"
+          
+          docker pull ${FRONTEND_IMAGE_TAG}
+          docker pull ${API_GATEWAY_IMAGE_TAG}
+          docker pull ${AI_SERVICE_IMAGE_TAG}
+          docker pull ${WORKER_SERVICE_IMAGE_TAG}
 
           echo "📦 Loading images into kind cluster..."
-          kind load docker-image ${FRONTEND_IMAGE_TAG} --name chart-testing || echo "⚠️ Failed to load frontend"
-          kind load docker-image ${API_GATEWAY_IMAGE_TAG} --name chart-testing || echo "⚠️ Failed to load api-gateway"
-          kind load docker-image ${AI_SERVICE_IMAGE_TAG} --name chart-testing || echo "⚠️ Failed to load ai-service"
-          kind load docker-image ${WORKER_SERVICE_IMAGE_TAG} --name chart-testing || echo "⚠️ Failed to load worker-service"
+          kind load docker-image ${FRONTEND_IMAGE_TAG} --name chart-testing
+          kind load docker-image ${API_GATEWAY_IMAGE_TAG} --name chart-testing
+          kind load docker-image ${AI_SERVICE_IMAGE_TAG} --name chart-testing
+          kind load docker-image ${WORKER_SERVICE_IMAGE_TAG} --name chart-testing
+          
+          echo "✅ Images loaded successfully"
 
       - name: Deploy to local Kubernetes
         run: |
@@ -138,11 +147,17 @@ jobs:
           kubectl create namespace dashboard-app || true
 
           # Update image tags in Kubernetes manifests
-          VERSION=${{ needs.build-and-push.outputs.version || 'latest' }}
+          VERSION=${{ needs.build-and-push.outputs.version }}
           FRONTEND_IMAGE_TAG="${{ env.FRONTEND_IMAGE }}:${VERSION}"
           API_GATEWAY_IMAGE_TAG="${{ env.API_GATEWAY_IMAGE }}:${VERSION}"
           AI_SERVICE_IMAGE_TAG="${{ env.AI_SERVICE_IMAGE }}:${VERSION}"
           WORKER_SERVICE_IMAGE_TAG="${{ env.WORKER_SERVICE_IMAGE }}:${VERSION}"
+
+          echo "🏷️  Using image tags:"
+          echo "  Frontend: ${FRONTEND_IMAGE_TAG}"
+          echo "  API Gateway: ${API_GATEWAY_IMAGE_TAG}"
+          echo "  AI Service: ${AI_SERVICE_IMAGE_TAG}"
+          echo "  Worker Service: ${WORKER_SERVICE_IMAGE_TAG}"
 
           # Quote image values to avoid YAML parse issues
           sed -i -E "s|^(\s*image:)\s*.*$|\1 \"${FRONTEND_IMAGE_TAG}\"|" k8s/frontend.yaml
@@ -150,7 +165,7 @@ jobs:
           sed -i -E "s|^(\s*image:)\s*.*$|\1 \"${AI_SERVICE_IMAGE_TAG}\"|" k8s/ai-service.yaml
           sed -i -E "s|^(\s*image:)\s*.*$|\1 \"${WORKER_SERVICE_IMAGE_TAG}\"|" k8s/worker-service.yaml
           
-          # Apply Kubernetes manifests
+          echo "📄 Applying Kubernetes manifests..."
           kubectl apply -f k8s/ -n dashboard-app
 
       - name: Check deployment status and debug failures
