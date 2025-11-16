@@ -111,6 +111,27 @@ jobs:
         with:
           version: 'latest'
 
+      - name: Load images into kind cluster
+        run: |
+          # Pull the images that were just pushed
+          VERSION=${{ needs.build-and-push.outputs.version || 'latest' }}
+          FRONTEND_IMAGE_TAG="${{ env.FRONTEND_IMAGE }}:${VERSION}"
+          API_GATEWAY_IMAGE_TAG="${{ env.API_GATEWAY_IMAGE }}:${VERSION}"
+          AI_SERVICE_IMAGE_TAG="${{ env.AI_SERVICE_IMAGE }}:${VERSION}"
+          WORKER_SERVICE_IMAGE_TAG="${{ env.WORKER_SERVICE_IMAGE }}:${VERSION}"
+
+          echo "🔽 Pulling images from GHCR..."
+          docker pull ${FRONTEND_IMAGE_TAG} || echo "⚠️ Failed to pull frontend"
+          docker pull ${API_GATEWAY_IMAGE_TAG} || echo "⚠️ Failed to pull api-gateway"
+          docker pull ${AI_SERVICE_IMAGE_TAG} || echo "⚠️ Failed to pull ai-service"
+          docker pull ${WORKER_SERVICE_IMAGE_TAG} || echo "⚠️ Failed to pull worker-service"
+
+          echo "📦 Loading images into kind cluster..."
+          kind load docker-image ${FRONTEND_IMAGE_TAG} --name chart-testing || echo "⚠️ Failed to load frontend"
+          kind load docker-image ${API_GATEWAY_IMAGE_TAG} --name chart-testing || echo "⚠️ Failed to load api-gateway"
+          kind load docker-image ${AI_SERVICE_IMAGE_TAG} --name chart-testing || echo "⚠️ Failed to load ai-service"
+          kind load docker-image ${WORKER_SERVICE_IMAGE_TAG} --name chart-testing || echo "⚠️ Failed to load worker-service"
+
       - name: Deploy to local Kubernetes
         run: |
           # Create namespace
