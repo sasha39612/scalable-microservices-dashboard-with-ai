@@ -28,10 +28,9 @@ COPY frontend/global.d.ts ./frontend/global.d.ts
 RUN pnpm install --frozen-lockfile
 
 # Build the application
-WORKDIR /app/frontend
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-RUN pnpm build
+RUN cd frontend && pnpm build
 
 # Production stage
 FROM node:20-alpine
@@ -52,9 +51,11 @@ COPY frontend/next.config.mjs ./frontend/next.config.mjs
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy built application from builder
+COPY --from=builder /app/frontend/.next ./frontend/.next
+COPY --from=builder /app/frontend/public ./frontend/public
+
+# Set working directory to frontend for runtime
 WORKDIR /app/frontend
-COPY --from=builder /app/frontend/.next ./.next
-COPY --from=builder /app/frontend/public ./public
 
 # Set environment
 ENV NEXT_TELEMETRY_DISABLED=1
