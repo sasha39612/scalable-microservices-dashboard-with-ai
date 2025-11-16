@@ -155,9 +155,10 @@ jobs:
       - name: Build Docker images
         run: |
           REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t ghcr.io/${REPO}/api-gateway:latest ./backend/api-gateway
-          docker build -t ghcr.io/${REPO}/worker-service:latest ./backend/worker-service
-          docker build -t ghcr.io/${REPO}/ai-service:latest ./backend/ai-service
+          # Explicitly reference Dockerfile.dev since directories don't contain a default Dockerfile
+          docker build -f backend/api-gateway/Dockerfile.dev -t ghcr.io/${REPO}/api-gateway:latest backend/api-gateway
+          docker build -f backend/worker-service/Dockerfile.dev -t ghcr.io/${REPO}/worker-service:latest backend/worker-service
+          docker build -f backend/ai-service/Dockerfile.dev -t ghcr.io/${REPO}/ai-service:latest backend/ai-service
       - name: Push Docker images
         run: |
           REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
