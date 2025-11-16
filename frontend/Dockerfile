@@ -16,19 +16,19 @@ COPY frontend/next.config.mjs ./frontend/next.config.mjs
 COPY frontend/postcss.config.mjs ./frontend/postcss.config.mjs
 COPY frontend/tailwind.config.ts ./frontend/tailwind.config.ts
 
-# Install dependencies
-WORKDIR /app/frontend
+# Copy source code
+COPY frontend/app ./frontend/app
+COPY frontend/components ./frontend/components
+COPY frontend/hooks ./frontend/hooks
+COPY frontend/styles ./frontend/styles
+COPY frontend/utils ./frontend/utils
+COPY frontend/global.d.ts ./frontend/global.d.ts
+
+# Install dependencies from workspace root
 RUN pnpm install --frozen-lockfile
 
-# Copy source code
-COPY frontend/app ./app
-COPY frontend/components ./components
-COPY frontend/hooks ./hooks
-COPY frontend/styles ./styles
-COPY frontend/utils ./utils
-COPY frontend/global.d.ts ./global.d.ts
-
 # Build the application
+WORKDIR /app/frontend
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 RUN pnpm build
@@ -48,11 +48,11 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/package.json ./frontend/package.json
 COPY frontend/next.config.mjs ./frontend/next.config.mjs
 
-# Install only production dependencies
-WORKDIR /app/frontend
+# Install only production dependencies from workspace root
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy built application from builder
+WORKDIR /app/frontend
 COPY --from=builder /app/frontend/.next ./.next
 COPY --from=builder /app/frontend/public ./public
 
