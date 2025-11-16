@@ -15,6 +15,7 @@ spec:
       containers:
         - name: api-gateway
           image: "api-gateway:local"
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 4000
           env:

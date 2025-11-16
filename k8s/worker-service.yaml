@@ -15,6 +15,7 @@ spec:
       containers:
         - name: worker-service
           image: "worker-service:local"
+          imagePullPolicy: IfNotPresent
           env:
             - name: NODE_ENV
               value: "production"

@@ -132,14 +132,53 @@ jobs:
           # Apply Kubernetes manifests
           kubectl apply -f k8s/ -n dashboard-app
 
+      - name: Check deployment status and debug failures
+        run: |
+          echo "📊 Current deployment status:"
+          kubectl get all -n dashboard-app
+          
+          echo "🔍 Checking pod status:"
+          kubectl get pods -n dashboard-app -o wide
+          
+          echo "🔎 Describing deployments:"
+          kubectl describe deployments -n dashboard-app
+          
+          echo "📋 Pod events and logs for debugging:"
+          for pod in $(kubectl get pods -n dashboard-app -o name); do
+            echo "=== Describing $pod ==="
+            kubectl describe $pod -n dashboard-app || true
+            echo "=== Logs for $pod ==="
+            kubectl logs $pod -n dashboard-app --tail=50 || true
+          done
+
       - name: Wait for deployments
         run: |
-          kubectl wait --for=condition=available --timeout=300s deployment/frontend -n dashboard-app
-          kubectl wait --for=condition=available --timeout=300s deployment/api-gateway -n dashboard-app
-          kubectl wait --for=condition=available --timeout=300s deployment/ai-service -n dashboard-app
-          kubectl wait --for=condition=available --timeout=300s deployment/worker-service -n dashboard-app
+          kubectl wait --for=condition=available --timeout=300s deployment/frontend -n dashboard-app || {
+            echo "❌ Frontend deployment failed to become available"
+            kubectl describe deployment/frontend -n dashboard-app
+            kubectl logs -l app=frontend -n dashboard-app --tail=100
+            exit 1
+          }
+          kubectl wait --for=condition=available --timeout=300s deployment/api-gateway -n dashboard-app || {
+            echo "❌ API Gateway deployment failed to become available"
+            kubectl describe deployment/api-gateway -n dashboard-app
+            kubectl logs -l app=api-gateway -n dashboard-app --tail=100
+            exit 1
+          }
+          kubectl wait --for=condition=available --timeout=300s deployment/ai-service -n dashboard-app || {
+            echo "❌ AI Service deployment failed to become available"
+            kubectl describe deployment/ai-service -n dashboard-app
+            kubectl logs -l app=ai-service -n dashboard-app --tail=100
+            exit 1
+          }
+          kubectl wait --for=condition=available --timeout=300s deployment/worker-service -n dashboard-app || {
+            echo "❌ Worker Service deployment failed to become available"
+            kubectl describe deployment/worker-service -n dashboard-app
+            kubectl logs -l app=worker-service -n dashboard-app --tail=100
+            exit 1
+          }
 
       - name: Test deployment
         run: |
           kubectl get all -n dashboard-app
-          kubectl describe deployments -n dashboard-app
+          echo "✅ All deployments are healthy"
