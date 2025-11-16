@@ -6,8 +6,8 @@ WORKDIR /app
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Copy root package files
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+# Copy root package files and tsconfig
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.json ./
 
 # Copy all backend package.json files for workspace setup
 COPY backend/ai-service/package.json ./backend/ai-service/
