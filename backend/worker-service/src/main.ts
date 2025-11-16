@@ -1,1 +1,1 @@
-console.log('AI Service started');
+console.log('Worker Service started');
