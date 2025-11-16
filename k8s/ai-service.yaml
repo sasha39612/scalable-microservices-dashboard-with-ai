@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: ai-service
-          image: ai-service:local
+          image: "ai-service:local"
           env:
             - name: NODE_ENV
               value: "production"

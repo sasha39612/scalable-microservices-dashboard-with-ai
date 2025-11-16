@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: api-gateway:local
+          image: "api-gateway:local"
           ports:
             - containerPort: 4000
           env:

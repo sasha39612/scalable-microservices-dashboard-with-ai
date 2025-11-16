@@ -154,14 +154,16 @@ jobs:
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Build Docker images
         run: |
-          docker build -t ghcr.io/${{ github.repository }}/api-gateway:latest ./backend/api-gateway
-          docker build -t ghcr.io/${{ github.repository }}/worker-service:latest ./backend/worker-service
-          docker build -t ghcr.io/${{ github.repository }}/ai-service:latest ./backend/ai-service
+          REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t ghcr.io/${REPO}/api-gateway:latest ./backend/api-gateway
+          docker build -t ghcr.io/${REPO}/worker-service:latest ./backend/worker-service
+          docker build -t ghcr.io/${REPO}/ai-service:latest ./backend/ai-service
       - name: Push Docker images
         run: |
-          docker push ghcr.io/${{ github.repository }}/api-gateway:latest
-          docker push ghcr.io/${{ github.repository }}/worker-service:latest
-          docker push ghcr.io/${{ github.repository }}/ai-service:latest
+          REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker push ghcr.io/${REPO}/api-gateway:latest
+          docker push ghcr.io/${REPO}/worker-service:latest
+          docker push ghcr.io/${REPO}/ai-service:latest
 
   # ========================================================
   # Deployment (conditional: staging vs production)

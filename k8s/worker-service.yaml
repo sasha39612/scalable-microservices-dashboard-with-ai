@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: worker-service
-          image: worker-service:local
+          image: "worker-service:local"
           env:
             - name: NODE_ENV
               value: "production"
