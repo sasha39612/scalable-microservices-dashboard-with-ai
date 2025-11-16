@@ -49,7 +49,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: frontend/Dockerfile.dev
+          file: frontend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -60,7 +60,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: backend/api-gateway/Dockerfile.dev
+          file: backend/api-gateway/Dockerfile
           push: true
           tags: ${{ env.API_GATEWAY_IMAGE }}:${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -71,7 +71,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: backend/ai-service/Dockerfile.dev
+          file: backend/ai-service/Dockerfile
           push: true
           tags: ${{ env.AI_SERVICE_IMAGE }}:${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -82,7 +82,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: backend/worker-service/Dockerfile.dev
+          file: backend/worker-service/Dockerfile
           push: true
           tags: ${{ env.WORKER_SERVICE_IMAGE }}:${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}

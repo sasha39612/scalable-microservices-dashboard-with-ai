@@ -2,8 +2,9 @@ FROM node:20-alpine
 
 WORKDIR /app/backend/worker-service
 
-# Install pnpm and ts-node-dev globally
-RUN npm install -g pnpm ts-node-dev
+# Install curl for healthchecks and pnpm globally
+RUN apk add --no-cache curl && \
+    npm install -g pnpm ts-node-dev
 
 # Copy package.json first (for caching)
 COPY backend/worker-service/package.json ./
