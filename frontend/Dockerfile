@@ -52,7 +52,6 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy built application from builder
 COPY --from=builder /app/frontend/.next ./frontend/.next
-COPY --from=builder /app/frontend/public ./frontend/public
 
 # Set working directory to frontend for runtime
 WORKDIR /app/frontend
