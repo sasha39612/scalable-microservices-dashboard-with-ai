@@ -30,7 +30,7 @@ RUN pnpm install --frozen-lockfile
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-RUN cd frontend && pnpm build
+RUN pnpm --filter frontend build
 
 # Production stage
 FROM node:20-alpine

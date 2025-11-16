@@ -1,4 +1,5 @@
 packages:
+  - 'frontend'
   - 'backend/common'
   - 'backend/api-gateway'
   - 'backend/ai-service'
