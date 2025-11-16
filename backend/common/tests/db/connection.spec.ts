@@ -5,6 +5,7 @@ import {
   createConnection,
 } from "../../src/db/connection";
 import { appConfig } from "../../src/config";
+import { logger } from "../../src/logging/logger";
 
 // Mock the config module
 jest.mock("../../src/config", () => ({
@@ -15,12 +16,32 @@ jest.mock("../../src/config", () => ({
   },
 }));
 
+// Mock logger to avoid console output during tests
+jest.mock("../../src/logging/logger", () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
+
 // Mock TypeORM DataSource
+interface MockDataSource {
+  options: unknown;
+  isInitialized: boolean;
+  initialize: jest.Mock;
+  destroy: jest.Mock;
+  query: jest.Mock;
+  runMigrations: jest.Mock;
+  undoLastMigration: jest.Mock;
+}
+
 jest.mock("typeorm", () => {
   const actualTypeorm = jest.requireActual("typeorm");
   return {
     ...actualTypeorm,
-    DataSource: jest.fn().mockImplementation(function (this: any, options: any) {
+    DataSource: jest.fn().mockImplementation(function (this: MockDataSource, options: unknown) {
       this.options = options;
       this.isInitialized = false;
       this.initialize = jest.fn().mockImplementation(async () => {
@@ -40,25 +61,18 @@ jest.mock("typeorm", () => {
 
 describe("DatabaseConnection", () => {
   let dbConnection: DatabaseConnection;
-  let consoleLogSpy: jest.SpyInstance;
-  let consoleErrorSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // Clear singleton instance before each test
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (DatabaseConnection as any).instance = undefined;
     dbConnection = DatabaseConnection.getInstance();
-    
-    // Spy on console methods
-    consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
-    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
   });
 
   afterEach(async () => {
     // Cleanup after each test
     await dbConnection.disconnect();
     jest.clearAllMocks();
-    consoleLogSpy.mockRestore();
-    consoleErrorSpy.mockRestore();
   });
 
   describe("Singleton Pattern", () => {
@@ -81,7 +95,7 @@ describe("DatabaseConnection", () => {
 
       expect(dataSource).toBeDefined();
       expect(dataSource.isInitialized).toBe(true);
-      expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect(logger.info).toHaveBeenCalledWith(
         "Database connection established successfully"
       );
     });
@@ -110,33 +124,35 @@ describe("DatabaseConnection", () => {
       const mockError = new Error("Connection refused");
       
       // Mock DataSource to throw error on initialize
-      (DataSource as jest.Mock).mockImplementationOnce(function (this: any) {
+      (DataSource as jest.Mock).mockImplementationOnce(function (this: MockDataSource) {
         this.isInitialized = false;
         this.initialize = jest.fn().mockRejectedValue(mockError);
         return this;
       });
 
       // Create new instance to use mocked DataSource
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (DatabaseConnection as any).instance = undefined;
       dbConnection = DatabaseConnection.getInstance();
 
       await expect(dbConnection.connect()).rejects.toThrow(
         "Failed to connect to database: Connection refused"
       );
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Database connection failed:",
-        "Connection refused"
+      expect(logger.error).toHaveBeenCalledWith(
+        "Database connection failed",
+        { error: "Connection refused" }
       );
     });
 
     it("should handle non-Error exceptions", async () => {
       // Mock DataSource to throw non-Error
-      (DataSource as jest.Mock).mockImplementationOnce(function (this: any) {
+      (DataSource as jest.Mock).mockImplementationOnce(function (this: MockDataSource) {
         this.isInitialized = false;
         this.initialize = jest.fn().mockRejectedValue("String error");
         return this;
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (DatabaseConnection as any).instance = undefined;
       dbConnection = DatabaseConnection.getInstance();
 
@@ -186,7 +202,7 @@ describe("DatabaseConnection", () => {
 
       expect(dataSource.destroy).toHaveBeenCalled();
       expect(dbConnection.isConnected()).toBe(false);
-      expect(consoleLogSpy).toHaveBeenCalledWith("Database connection closed");
+      expect(logger.info).toHaveBeenCalledWith("Database connection closed");
     });
 
     it("should handle disconnect when not connected", async () => {
@@ -206,12 +222,13 @@ describe("DatabaseConnection", () => {
 
     it("should return false for failed connection", async () => {
       // Mock DataSource to throw error
-      (DataSource as jest.Mock).mockImplementationOnce(function (this: any) {
+      (DataSource as jest.Mock).mockImplementationOnce(function (this: MockDataSource) {
         this.isInitialized = false;
         this.initialize = jest.fn().mockRejectedValue(new Error("Connection failed"));
         return this;
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (DatabaseConnection as any).instance = undefined;
       dbConnection = DatabaseConnection.getInstance();
 
@@ -226,7 +243,7 @@ describe("DatabaseConnection", () => {
       await dbConnection.runMigrations();
 
       expect(dataSource.runMigrations).toHaveBeenCalled();
-      expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect(logger.info).toHaveBeenCalledWith(
         "Migrations executed successfully"
       );
     });
@@ -244,7 +261,7 @@ describe("DatabaseConnection", () => {
       await dbConnection.revertMigration();
 
       expect(dataSource.undoLastMigration).toHaveBeenCalled();
-      expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect(logger.info).toHaveBeenCalledWith(
         "Last migration reverted successfully"
       );
     });
@@ -268,8 +285,10 @@ describe("DatabaseConnection", () => {
   describe("Configuration", () => {
     it("should use production config in production environment", async () => {
       // Mock production environment
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (appConfig as any).NODE_ENV = "production";
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (DatabaseConnection as any).instance = undefined;
       dbConnection = DatabaseConnection.getInstance();
       
@@ -284,13 +303,16 @@ describe("DatabaseConnection", () => {
       });
 
       // Reset to test environment
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (appConfig as any).NODE_ENV = "test";
     });
 
     it("should use development config in development environment", async () => {
       // Mock development environment
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (appConfig as any).NODE_ENV = "development";
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (DatabaseConnection as any).instance = undefined;
       dbConnection = DatabaseConnection.getInstance();
       
@@ -303,13 +325,15 @@ describe("DatabaseConnection", () => {
       });
 
       // Reset to test environment
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (appConfig as any).NODE_ENV = "test";
     });
 
     it("should include connection pool settings", async () => {
       const dataSource = await dbConnection.connect();
 
-      expect(dataSource.options.extra).toEqual({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((dataSource.options as any).extra).toEqual({
         max: 20,
         min: 5,
         idleTimeoutMillis: 30000,
@@ -321,7 +345,8 @@ describe("DatabaseConnection", () => {
       const dataSource = await dbConnection.connect();
 
       expect(dataSource.options.entities).toBeDefined();
-      expect((dataSource.options.entities as any[]).length).toBeGreaterThan(0);
+      expect(Array.isArray(dataSource.options.entities)).toBe(true);
+      expect((dataSource.options.entities as unknown[]).length).toBeGreaterThan(0);
     });
   });
 });

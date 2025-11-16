@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import "reflect-metadata";
 import { getDatabaseConnection } from "../../src/db/connection";
 

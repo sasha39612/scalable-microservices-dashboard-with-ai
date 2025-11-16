@@ -15,7 +15,7 @@ export default [
   ...compat.extends("prettier"),
 
   {
-    ignores: ["node_modules/", "dist/", "build/", ".husky/", ".git/"],
+    ignores: ["node_modules/", "**/dist/", "**/build/", ".husky/", ".git/", "**/*.js"],
 
     languageOptions: {
       ecmaVersion: 2023,

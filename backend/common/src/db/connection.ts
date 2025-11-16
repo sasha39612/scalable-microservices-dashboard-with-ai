@@ -1,6 +1,7 @@
 import { DataSource, DataSourceOptions } from "typeorm";
 import { appConfig } from "../config";
 import { User } from "../entities/user.entity";
+import { logger } from "../logging/logger";
 
 /**
  * Database connection configuration
@@ -64,11 +65,11 @@ export class DatabaseConnection {
       this.dataSource = new DataSource(options);
       await this.dataSource.initialize();
       
-      console.log("Database connection established successfully");
+      logger.info("Database connection established successfully");
       return this.dataSource;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      console.error("Database connection failed:", message);
+      logger.error("Database connection failed", { error: message });
       throw new Error(`Failed to connect to database: ${message}`);
     }
   }
@@ -100,7 +101,7 @@ export class DatabaseConnection {
     if (this.dataSource?.isInitialized) {
       await this.dataSource.destroy();
       this.dataSource = null;
-      console.log("Database connection closed");
+      logger.info("Database connection closed");
     }
   }
 
@@ -113,7 +114,7 @@ export class DatabaseConnection {
       const ds = await this.connect();
       await ds.query("SELECT 1");
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -124,7 +125,7 @@ export class DatabaseConnection {
   async runMigrations(): Promise<void> {
     const ds = this.getDataSource();
     await ds.runMigrations();
-    console.log("Migrations executed successfully");
+    logger.info("Migrations executed successfully");
   }
 
   /**
@@ -133,7 +134,7 @@ export class DatabaseConnection {
   async revertMigration(): Promise<void> {
     const ds = this.getDataSource();
     await ds.undoLastMigration();
-    console.log("Last migration reverted successfully");
+    logger.info("Last migration reverted successfully");
   }
 }
 
