@@ -6,6 +6,8 @@ import { join } from 'path';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { AIModule } from './modules/ai/ai.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -19,6 +21,8 @@ import { HealthController } from './health.controller';
     AuthModule,
     UserModule,
     DashboardModule,
+    TasksModule,
+    AIModule,
   ],
   controllers: [HealthController],
 })
