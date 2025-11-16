@@ -63,7 +63,8 @@ for file in k8s/*.yaml; do
   filename=$(basename "$file")
   servicename="${filename%.yaml}"
   if [ "$servicename" != "config" ]; then
-    sed "s|image:.*$servicename.*|image: $servicename:local|" "$file" > "k8s/local/$filename"
+    # Replace image line with a safely quoted value to avoid YAML parse errors from the colon
+    sed -E "s|^(\s*image:)\s*.*$|\1 \"${servicename}:local\"|" "$file" > "k8s/local/$filename"
   else
     cp "$file" "k8s/local/$filename"
   fi
