@@ -114,14 +114,20 @@ jobs:
       - name: Deploy to local Kubernetes
         run: |
           # Create namespace
-          kubectl create namespace dashboard-app
+          kubectl create namespace dashboard-app || true
 
           # Update image tags in Kubernetes manifests
-          VERSION=${{ steps.meta.outputs.version }}
-          sed -i "s|image:.*frontend.*|image: ${{ env.FRONTEND_IMAGE }}:${VERSION}|" k8s/frontend.yaml
-          sed -i "s|image:.*api-gateway.*|image: ${{ env.API_GATEWAY_IMAGE }}:${VERSION}|" k8s/api-gateway.yaml
-          sed -i "s|image:.*ai-service.*|image: ${{ env.AI_SERVICE_IMAGE }}:${VERSION}|" k8s/ai-service.yaml
-          sed -i "s|image:.*worker-service.*|image: ${{ env.WORKER_SERVICE_IMAGE }}:${VERSION}|" k8s/worker-service.yaml
+          VERSION=${{ needs.build-and-push.outputs.version || 'latest' }}
+          FRONTEND_IMAGE_TAG="${{ env.FRONTEND_IMAGE }}:${VERSION}"
+          API_GATEWAY_IMAGE_TAG="${{ env.API_GATEWAY_IMAGE }}:${VERSION}"
+          AI_SERVICE_IMAGE_TAG="${{ env.AI_SERVICE_IMAGE }}:${VERSION}"
+          WORKER_SERVICE_IMAGE_TAG="${{ env.WORKER_SERVICE_IMAGE }}:${VERSION}"
+
+          # Quote image values to avoid YAML parse issues
+          sed -i -E "s|^(\s*image:)\s*.*$|\1 \"${FRONTEND_IMAGE_TAG}\"|" k8s/frontend.yaml
+          sed -i -E "s|^(\s*image:)\s*.*$|\1 \"${API_GATEWAY_IMAGE_TAG}\"|" k8s/api-gateway.yaml
+          sed -i -E "s|^(\s*image:)\s*.*$|\1 \"${AI_SERVICE_IMAGE_TAG}\"|" k8s/ai-service.yaml
+          sed -i -E "s|^(\s*image:)\s*.*$|\1 \"${WORKER_SERVICE_IMAGE_TAG}\"|" k8s/worker-service.yaml
           
           # Apply Kubernetes manifests
           kubectl apply -f k8s/ -n dashboard-app
