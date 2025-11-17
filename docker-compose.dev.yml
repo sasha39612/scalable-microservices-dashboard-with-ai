@@ -39,6 +39,8 @@ services:
       - ./backend/api-gateway/tsconfig.json:/app/backend/api-gateway/tsconfig.json
     environment:
       - NODE_ENV=development
+      - PORT=4000
+      - DATABASE_URL=postgresql://dashboard_user:REDACTED@host.docker.internal:5432/microservices_dashboard
       - WORKER_SERVICE_URL=http://worker-service:4001
       - AI_SERVICE_URL=http://ai-service:5000
     working_dir: /app/backend/api-gateway
