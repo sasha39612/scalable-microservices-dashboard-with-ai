@@ -56,4 +56,4 @@ WORKDIR /app/backend/api-gateway
 
 EXPOSE 4000
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/api-gateway/src/main.js"]

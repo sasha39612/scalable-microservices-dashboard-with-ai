@@ -9,14 +9,27 @@ const compat = new FlatCompat({
 });
 
 export default [
+  // Global ignores - must be first
+  {
+    ignores: [
+      "node_modules/",
+      "**/node_modules/",
+      "**/dist/",
+      "**/build/",
+      "**/.next/",
+      "**/*.js",
+      "**/*.mjs",
+      ".husky/",
+      ".git/",
+    ],
+  },
+
   ...compat.extends("eslint:recommended"),
   ...compat.extends("plugin:@typescript-eslint/recommended"),
   ...compat.extends("plugin:react/recommended"),
   ...compat.extends("prettier"),
 
   {
-    ignores: ["node_modules/", "**/dist/", "**/build/", ".husky/", ".git/", "**/*.js"],
-
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: "module",
