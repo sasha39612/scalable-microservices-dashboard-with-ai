@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { QueueService, RetryTaskOptions, TaskStatusResponse, TaskLogsResponse } from '../../src/services/queue.service';
+import { QueueService, RetryTaskOptions } from '../../src/services/queue.service';
 import { Job, JobStatus, JobPriority } from '../../../common/src/types/common';
 
 describe('QueueService', () => {

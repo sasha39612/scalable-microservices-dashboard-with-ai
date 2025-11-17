@@ -1,18 +1,63 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AIController } from '../src/controllers/ai.controller';
 import { AIService } from '../src/services/ai.service';
+import { OpenAIService } from '../src/services/openai.service';
+import { CacheService } from '../src/services/cache.service';
+import { WorkerClientService } from '../src/services/worker-client.service';
 import { ChatMessageDto, InsightsRequestDto } from '../src/dto/chat.dto';
 
 describe('AIController', () => {
   let controller: AIController;
+  let aiService: AIService;
+
+  const mockOpenAIService = {
+    isAvailable: jest.fn().mockReturnValue(false), // Use mock mode
+    createChatCompletion: jest.fn(),
+    generateDataInsights: jest.fn(),
+  };
+
+  const mockCacheService = {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+    del: jest.fn().mockResolvedValue(undefined),
+    delete: jest.fn().mockResolvedValue(undefined),
+    getChatCacheTTL: jest.fn().mockReturnValue(3600),
+    getInsightsCacheTTL: jest.fn().mockReturnValue(7200),
+    getChatCacheKey: jest.fn((conversationId: string, messageHash: string) => 
+      `chat:${conversationId}:${messageHash}`),
+    getInsightsCacheKey: jest.fn((insightType: string, dataHash: string) => 
+      `insights:${insightType}:${dataHash}`),
+    getConversationCacheKey: jest.fn((conversationId: string) => 
+      `conversation:${conversationId}`),
+  };
+
+  const mockWorkerClientService = {
+    isWorkerAvailable: jest.fn().mockReturnValue(false),
+    createAIProcessingJob: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIController],
-      providers: [AIService],
+      providers: [
+        AIService,
+        {
+          provide: OpenAIService,
+          useValue: mockOpenAIService,
+        },
+        {
+          provide: CacheService,
+          useValue: mockCacheService,
+        },
+        {
+          provide: WorkerClientService,
+          useValue: mockWorkerClientService,
+        },
+      ],
     }).compile();
 
     controller = module.get<AIController>(AIController);
+    aiService = module.get<AIService>(AIService);
   });
 
   it('should be defined', () => {

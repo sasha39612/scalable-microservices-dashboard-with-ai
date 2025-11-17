@@ -100,6 +100,52 @@ microservices-dashboard/
 * **DevOps:** Docker, Docker Compose, GitHub Actions CI/CD, Vercel, Railway / AWS
 * **Testing:** Jest, React Testing Library
 
+## 🤖 AI Service Integration
+
+The AI Service is fully integrated with the API Gateway, providing powerful AI capabilities through both GraphQL and REST APIs:
+
+**Features:**
+- 💬 **AI Chat Assistant:** Multi-turn conversations with context awareness
+- 📊 **Data Insights:** AI-powered analytics and recommendations
+- 🔍 **Data Analysis:** Trend detection, anomaly detection, and predictions
+- 📝 **Summarization:** Intelligent text and data summarization
+- ⚡ **Performance:** Response caching and async processing for large datasets
+
+**Access Methods:**
+1. **GraphQL API** (via API Gateway): `http://localhost:4000/graphql`
+2. **REST API** (direct): `http://localhost:5000/ai/*`
+
+**Quick Test:**
+```bash
+# Test AI integration
+./scripts/test-ai-gateway-integration.sh
+
+# Or manually test
+curl -X POST http://localhost:5000/ai/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Analyze my system performance"}'
+```
+
+**GraphQL Example:**
+```graphql
+mutation {
+  chat(input: {
+    messages: [
+      { role: user, content: "What insights can you provide?" }
+    ]
+  }) {
+    message
+    conversationId
+  }
+}
+```
+
+📖 **Documentation:**
+- [AI Gateway Integration Guide](docs/AI_GATEWAY_INTEGRATION.md)
+- [Quick Reference](docs/AI_GATEWAY_QUICK_REF.md)
+- [AI Service API](backend/ai-service/API_DOCUMENTATION.md)
+- [Integration Summary](AI_INTEGRATION_SUMMARY.md)
+
 ## 🏥 Health Checks
 
 Comprehensive health monitoring is implemented across all services:
