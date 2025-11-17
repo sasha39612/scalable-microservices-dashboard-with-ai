@@ -154,7 +154,7 @@ export class DashboardService {
       
       // Aggregate task statistics
       const activeTasks = tasks.filter(t => 
-        t.status === 'pending' || t.status === 'in-progress'
+        t.status === 'pending' || t.status === 'processing'
       ).length;
       
       const completedTasks = tasks.filter(t => t.status === 'completed').length;
