@@ -23,6 +23,7 @@ export class ChatResponseDto {
     model?: string;
     tokensUsed?: number;
     confidence?: number;
+    cached?: boolean;
   };
 }
 
@@ -41,6 +42,13 @@ export class InsightsRequestDto {
     start: Date;
     end: Date;
   };
+
+  @IsOptional()
+  @IsString()
+  context?: string;
+
+  @IsOptional()
+  async?: boolean;
 }
 
 export class InsightsResponseDto {
@@ -52,8 +60,14 @@ export class InsightsResponseDto {
   };
   visualizations?: {
     type: string;
+    title?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any[];
   }[];
   timestamp: Date;
+  metadata?: {
+    jobId?: string;
+    status?: string;
+    async?: boolean;
+  };
 }

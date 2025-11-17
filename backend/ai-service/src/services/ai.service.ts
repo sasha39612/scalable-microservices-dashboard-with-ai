@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ChatMessageDto, ChatResponseDto, InsightsRequestDto, InsightsResponseDto } from '../dto/chat.dto';
+import { OpenAIService, ChatMessage } from './openai.service';
+import { CacheService } from './cache.service';
+import { WorkerClientService } from './worker-client.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AIService {
@@ -7,32 +11,104 @@ export class AIService {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private conversations = new Map<string, any[]>();
 
+  constructor(
+    private readonly openaiService: OpenAIService,
+    private readonly cacheService: CacheService,
+    private readonly workerClient: WorkerClientService,
+  ) {}
+
   async processChat(chatDto: ChatMessageDto): Promise<ChatResponseDto> {
     this.logger.log(`Processing chat message: ${chatDto.message.substring(0, 50)}...`);
 
     const conversationId = chatDto.conversationId || this.generateConversationId();
     
-    // Get conversation history
-    const history = this.conversations.get(conversationId) || [];
+    // Get conversation history from cache or memory
+    const history = await this.getConversationHistory(conversationId);
     history.push({ role: 'user', content: chatDto.message });
 
     try {
-      // TODO: Integrate with actual AI service (OpenAI, Anthropic, etc.)
-      // For now, return a mock response
-      const response = await this.generateAIResponse(chatDto.message, history, chatDto.context);
+      // Check cache for similar query
+      const cacheKey = this.generateCacheKey(chatDto.message, chatDto.context);
+      const cachedResponse = await this.cacheService.get<{
+        response: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        metadata: any;
+      }>(cacheKey);
+
+      if (cachedResponse) {
+        this.logger.log('Returning cached response');
+        history.push({ role: 'assistant', content: cachedResponse.response });
+        await this.saveConversationHistory(conversationId, history);
+
+        return {
+          conversationId,
+          response: cachedResponse.response,
+          timestamp: new Date(),
+          metadata: {
+            ...cachedResponse.metadata,
+            cached: true,
+          },
+        };
+      }
+
+      // Process with OpenAI if available, otherwise fallback to mock
+      let response: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let metadata: any;
+
+      if (this.openaiService.isAvailable()) {
+        const systemMessage: ChatMessage = {
+          role: 'system',
+          content: this.buildSystemPrompt(chatDto.context),
+        };
+
+        const messages: ChatMessage[] = [
+          systemMessage,
+          ...history.map(h => ({
+            role: h.role as 'user' | 'assistant',
+            content: h.content,
+          })),
+        ];
+
+        const completion = await this.openaiService.createChatCompletion(messages, {
+          temperature: 0.7,
+          maxTokens: 2000,
+        });
+
+        response = completion.content;
+        metadata = {
+          model: completion.model,
+          tokensUsed: completion.tokensUsed,
+          confidence: 0.85,
+          cached: false,
+        };
+
+        // Cache the response
+        await this.cacheService.set(
+          cacheKey,
+          { response, metadata },
+          this.cacheService.getChatCacheTTL(),
+        );
+      } else {
+        // Fallback to mock response
+        this.logger.warn('OpenAI not available, using mock response');
+        response = await this.generateAIResponse(chatDto.message, history, chatDto.context);
+        metadata = {
+          model: 'mock-ai-model',
+          tokensUsed: this.estimateTokens(chatDto.message + response),
+          confidence: 0.85,
+          cached: false,
+        };
+      }
 
       history.push({ role: 'assistant', content: response });
-      this.conversations.set(conversationId, history);
+      await this.saveConversationHistory(conversationId, history);
 
       return {
         conversationId,
         response,
         timestamp: new Date(),
-        metadata: {
-          model: 'mock-ai-model',
-          tokensUsed: this.estimateTokens(chatDto.message + response),
-          confidence: 0.85,
-        },
+        metadata,
       };
     } catch (error) {
       const err = error as Error;
@@ -45,11 +121,78 @@ export class AIService {
     this.logger.log(`Generating insights for type: ${insightsDto.insightType}`);
 
     try {
-      // TODO: Integrate with actual AI service for insights generation
-      // For now, return mock insights based on the type
-      const insights = await this.analyzeData(insightsDto.data, insightsDto.insightType);
+      // Check cache first
+      const cacheKey = this.generateInsightsCacheKey(insightsDto.insightType, insightsDto.data);
+      const cachedInsights = await this.cacheService.get<InsightsResponseDto>(cacheKey);
 
-      return {
+      if (cachedInsights) {
+        this.logger.log('Returning cached insights');
+        return {
+          ...cachedInsights,
+          timestamp: new Date(),
+        };
+      }
+
+      // Check if we should process async via Worker Service for large datasets
+      const shouldProcessAsync = insightsDto.data.length > 1000 || insightsDto.async === true;
+
+      if (shouldProcessAsync && this.workerClient.isWorkerAvailable()) {
+        this.logger.log('Processing insights asynchronously via Worker Service');
+        
+        const jobId = await this.workerClient.createAIProcessingJob({
+          type: 'insights',
+          data: {
+            insightType: insightsDto.insightType,
+            data: insightsDto.data,
+          },
+        });
+
+        if (jobId) {
+          return {
+            insights: {
+              summary: 'Processing insights asynchronously...',
+              keyFindings: [`Job ID: ${jobId}`],
+              recommendations: ['Check job status for results'],
+              confidence: 0.0,
+            },
+            visualizations: [],
+            timestamp: new Date(),
+            metadata: {
+              jobId,
+              status: 'processing',
+              async: true,
+            },
+          };
+        }
+      }
+
+      // Process with OpenAI if available
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let insights: any;
+
+      if (this.openaiService.isAvailable()) {
+        this.logger.log('Generating insights with OpenAI');
+        
+        const aiInsights = await this.openaiService.generateDataInsights(
+          insightsDto.data,
+          insightsDto.insightType,
+          insightsDto.context,
+        );
+
+        insights = {
+          summary: aiInsights.summary,
+          keyFindings: aiInsights.keyFindings,
+          recommendations: aiInsights.recommendations,
+          confidence: aiInsights.confidence,
+          visualizations: this.generateVisualizations(insightsDto.data, insightsDto.insightType),
+        };
+      } else {
+        // Fallback to mock insights
+        this.logger.warn('OpenAI not available, using mock insights');
+        insights = await this.analyzeData(insightsDto.data, insightsDto.insightType);
+      }
+
+      const response: InsightsResponseDto = {
         insights: {
           summary: insights.summary,
           keyFindings: insights.keyFindings,
@@ -59,6 +202,15 @@ export class AIService {
         visualizations: insights.visualizations,
         timestamp: new Date(),
       };
+
+      // Cache the results
+      await this.cacheService.set(
+        cacheKey,
+        response,
+        this.cacheService.getInsightsCacheTTL(),
+      );
+
+      return response;
     } catch (error) {
       const err = error as Error;
       this.logger.error(`Error generating insights: ${err.message}`, err.stack);
@@ -69,13 +221,39 @@ export class AIService {
   async clearConversation(conversationId: string): Promise<void> {
     this.logger.log(`Clearing conversation: ${conversationId}`);
     this.conversations.delete(conversationId);
+    
+    // Clear from cache as well
+    await this.cacheService.delete(
+      this.cacheService.getConversationCacheKey(conversationId),
+    );
   }
 
   async getConversationHistory(conversationId: string): Promise<Array<{ role: string; content: string }>> {
+    // Try cache first
+    const cacheKey = this.cacheService.getConversationCacheKey(conversationId);
+    const cached = await this.cacheService.get<Array<{ role: string; content: string }>>(cacheKey);
+    
+    if (cached) {
+      return cached;
+    }
+
+    // Fallback to in-memory
     return this.conversations.get(conversationId) || [];
   }
 
   // Private helper methods
+  
+  private async saveConversationHistory(
+    conversationId: string,
+    history: Array<{ role: string; content: string }>,
+  ): Promise<void> {
+    // Save to memory
+    this.conversations.set(conversationId, history);
+    
+    // Save to cache
+    const cacheKey = this.cacheService.getConversationCacheKey(conversationId);
+    await this.cacheService.set(cacheKey, history, 3600); // 1 hour TTL
+  }
   private generateConversationId(): string {
     return `conv_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   }
@@ -211,5 +389,100 @@ export class AIService {
   private estimateTokens(text: string): number {
     // Rough estimation: ~4 characters per token
     return Math.ceil(text.length / 4);
+  }
+
+  private generateCacheKey(message: string, context?: string[]): string {
+    const contextStr = context ? context.join('|') : '';
+    const hash = crypto
+      .createHash('md5')
+      .update(`${message}:${contextStr}`)
+      .digest('hex');
+    return this.cacheService.getChatCacheKey('message', hash);
+  }
+
+  private generateInsightsCacheKey(
+    insightType: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: any[],
+  ): string {
+    const dataHash = crypto
+      .createHash('md5')
+      .update(JSON.stringify(data))
+      .digest('hex');
+    return this.cacheService.getInsightsCacheKey(insightType, dataHash);
+  }
+
+  private buildSystemPrompt(context?: string[]): string {
+    let prompt = `You are a helpful AI assistant for a microservices dashboard platform. 
+You help users understand their system metrics, analyze data, and provide actionable insights.
+Be concise, accurate, and helpful. Focus on practical recommendations.`;
+
+    if (context && context.length > 0) {
+      prompt += `\n\nContext: ${context.join(', ')}`;
+    }
+
+    return prompt;
+  }
+
+  private generateVisualizations(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: any[],
+    insightType: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): any[] {
+    // Generate basic visualizations based on insight type
+    if (data.length === 0) {
+      return [];
+    }
+
+    const visualizations = [];
+
+    switch (insightType) {
+      case 'performance':
+        visualizations.push({
+          type: 'line',
+          title: 'Performance Trend',
+          data: data.slice(0, 20).map((d, i) => ({
+            x: d.timestamp || i,
+            y: d.value || d.responseTime || Math.random() * 100,
+          })),
+        });
+        break;
+
+      case 'usage':
+        visualizations.push({
+          type: 'bar',
+          title: 'Usage Distribution',
+          data: data.slice(0, 10).map((d, i) => ({
+            x: d.label || d.category || `Item ${i + 1}`,
+            y: d.count || d.value || Math.random() * 1000,
+          })),
+        });
+        break;
+
+      case 'trends':
+        visualizations.push({
+          type: 'area',
+          title: 'Growth Trend',
+          data: data.slice(0, 30).map((d, i) => ({
+            x: d.date || d.timestamp || i,
+            y: d.value || d.total || Math.random() * 500,
+          })),
+        });
+        break;
+
+      default:
+        // Generic visualization
+        visualizations.push({
+          type: 'scatter',
+          title: 'Data Overview',
+          data: data.slice(0, 50).map((d, i) => ({
+            x: i,
+            y: d.value || Math.random() * 100,
+          })),
+        });
+    }
+
+    return visualizations;
   }
 }
