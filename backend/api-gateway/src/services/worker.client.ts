@@ -3,27 +3,37 @@ import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 interface Task {
   id: string;
   type: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'retrying';
+  priority: number;
   payload: Record<string, unknown>;
   result?: unknown;
   error?: string;
+  attempts: number;
+  maxAttempts: number;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
+  startedAt?: Date;
+  completedAt?: Date;
+  failedAt?: Date;
 }
 
 interface Job {
   id: string;
   name: string;
+  type?: string;
   schedule?: string;
   status: 'active' | 'paused' | 'failed';
+  payload?: Record<string, unknown>;
   lastRun?: Date;
   nextRun?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface CreateTaskDto {
   type: string;
   payload: Record<string, unknown>;
-  priority?: 'low' | 'normal' | 'high';
+  priority?: 'low' | 'normal' | 'high' | number;
 }
 
 interface CreateJobDto {

@@ -59,6 +59,15 @@ interface RetryTaskDto {
 }
 
 /**
+ * Create task request body
+ */
+interface CreateTaskDto {
+  type: string;
+  payload: Record<string, unknown>;
+  priority?: JobPriority;
+}
+
+/**
  * Tasks Controller
  * Handles REST endpoints for task management, retry operations, and log viewing
  */
@@ -71,6 +80,38 @@ export class TasksController {
   constructor() {
     // Initialize with some sample data for demonstration
     this.initializeSampleTasks();
+  }
+
+  /**
+   * POST /tasks
+   * Create a new task
+   */
+  @Post()
+  async createTask(@Body() createTaskDto: CreateTaskDto): Promise<Job> {
+    const taskId = (this.tasks.size + 1).toString();
+    
+    const newTask: Job = {
+      id: taskId,
+      type: createTaskDto.type,
+      status: JobStatus.Pending,
+      priority: createTaskDto.priority || JobPriority.Normal,
+      payload: createTaskDto.payload,
+      attempts: 0,
+      maxAttempts: 3,
+      createdAt: new Date(),
+    };
+
+    this.tasks.set(taskId, newTask);
+
+    // Add initial log entry
+    this.addLog(taskId, {
+      timestamp: new Date(),
+      level: 'info',
+      message: 'Task created',
+      metadata: { type: createTaskDto.type },
+    });
+
+    return newTask;
   }
 
   /**
@@ -173,6 +214,51 @@ export class TasksController {
       level: 'info',
       message: `Task retried${body.resetAttempts ? ' with reset attempts' : ''}`,
       metadata: { retriedBy: 'system', previousStatus: task.status },
+    });
+
+    return updatedTask;
+  }
+
+  /**
+   * POST /tasks/:id/cancel
+   * Cancel a pending or processing task
+   */
+  @Post(':id/cancel')
+  async cancelTask(@Param('id') id: string): Promise<Job> {
+    const task = this.tasks.get(id);
+
+    if (!task) {
+      throw new HttpException(
+        `Task with ID ${id} not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // Validate that the task can be cancelled
+    if (
+      task.status !== JobStatus.Pending &&
+      task.status !== JobStatus.Processing
+    ) {
+      throw new BadRequestException(
+        `Task with status ${task.status} cannot be cancelled. Only pending or processing tasks can be cancelled.`,
+      );
+    }
+
+    // Update task as cancelled
+    const updatedTask: Job = {
+      ...task,
+      status: JobStatus.Cancelled,
+      completedAt: new Date(),
+    };
+
+    this.tasks.set(id, updatedTask);
+
+    // Log the cancellation
+    this.addLog(id, {
+      timestamp: new Date(),
+      level: 'info',
+      message: 'Task cancelled',
+      metadata: { cancelledBy: 'user', previousStatus: task.status },
     });
 
     return updatedTask;

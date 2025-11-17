@@ -2,21 +2,65 @@
 
 ## Overview
 
-The Tasks Controller provides REST API endpoints for managing background tasks in the worker service. It supports fetching tasks, retrying failed tasks, and viewing task logs.
+The Tasks Controller provides REST API endpoints for managing background tasks in the worker service. It supports creating tasks, fetching tasks, retrying failed tasks, cancelling tasks, and viewing task logs.
 
 ## Base URL
 
 ```
-http://localhost:4001/tasks
+http://localhost:4001/api/tasks
 ```
+
+**Note:** All endpoints are prefixed with `/api`.
 
 ## Endpoints
 
-### 1. Get All Tasks
+### 1. Create Task
+
+Create a new background task.
+
+**Endpoint:** `POST /api/tasks`
+
+**Request Body:**
+```json
+{
+  "type": "email",
+  "payload": {
+    "to": "user@example.com",
+    "subject": "Welcome",
+    "body": "Welcome to our platform!"
+  },
+  "priority": 5
+}
+```
+
+**Response:**
+```json
+{
+  "id": "1",
+  "type": "email",
+  "status": "pending",
+  "priority": 5,
+  "payload": { "to": "user@example.com", "subject": "Welcome", "body": "Welcome to our platform!" },
+  "attempts": 0,
+  "maxAttempts": 3,
+  "createdAt": "2025-11-17T10:00:00.000Z"
+}
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:4001/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"type":"email","payload":{"to":"user@example.com"},"priority":5}'
+```
+
+---
+
+### 2. Get All Tasks
 
 Fetch all tasks with optional filtering and pagination.
 
-**Endpoint:** `GET /tasks`
+**Endpoint:** `GET /api/tasks`
 
 **Query Parameters:**
 - `status` (optional): Filter by task status (`pending`, `processing`, `completed`, `failed`, `cancelled`, `retrying`)
@@ -50,16 +94,16 @@ Fetch all tasks with optional filtering and pagination.
 
 **Example:**
 ```bash
-curl http://localhost:4001/tasks?status=failed&limit=10
+curl http://localhost:4001/api/tasks?status=failed&limit=10
 ```
 
 ---
 
-### 2. Get Task by ID
+### 3. Get Task by ID
 
 Fetch a specific task by its ID.
 
-**Endpoint:** `GET /tasks/:id`
+**Endpoint:** `GET /api/tasks/:id`
 
 **Path Parameters:**
 - `id`: Task ID (required)
@@ -82,16 +126,16 @@ Fetch a specific task by its ID.
 
 **Example:**
 ```bash
-curl http://localhost:4001/tasks/1
+curl http://localhost:4001/api/tasks/1
 ```
 
 ---
 
-### 3. Retry Task
+### 4. Retry Task
 
 Retry a failed or cancelled task.
 
-**Endpoint:** `POST /tasks/:id/retry`
+**Endpoint:** `POST /api/tasks/:id/retry`
 
 **Path Parameters:**
 - `id`: Task ID (required)
@@ -126,18 +170,49 @@ Retry a failed or cancelled task.
 
 **Example:**
 ```bash
-curl -X POST http://localhost:4001/tasks/2/retry \
+curl -X POST http://localhost:4001/api/tasks/2/retry \
   -H "Content-Type: application/json" \
   -d '{"resetAttempts": true}'
 ```
 
 ---
 
-### 4. Get Task Logs
+### 5. Cancel Task
+
+Cancel a pending or processing task.
+
+**Endpoint:** `POST /api/tasks/:id/cancel`
+
+**Path Parameters:**
+- `id`: Task ID (required)
+
+**Response:**
+```json
+{
+  "id": "3",
+  "type": "data-sync",
+  "status": "cancelled",
+  "priority": 10,
+  "payload": { "source": "database-a", "target": "database-b" },
+  "attempts": 0,
+  "maxAttempts": 5,
+  "createdAt": "2025-11-17T10:00:00.000Z",
+  "completedAt": "2025-11-17T10:05:00.000Z"
+}
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:4001/api/tasks/3/cancel
+```
+
+---
+
+### 6. Get Task Logs
 
 View logs for a specific task.
 
-**Endpoint:** `GET /tasks/:id/logs`
+**Endpoint:** `GET /api/tasks/:id/logs`
 
 **Path Parameters:**
 - `id`: Task ID (required)
@@ -209,8 +284,58 @@ Get summary statistics for all tasks.
 
 **Example:**
 ```bash
-curl http://localhost:4001/tasks/stats/summary
+curl http://localhost:4001/api/tasks/stats/summary
 ```
+
+---
+
+## Jobs API
+
+The Worker Service also provides endpoints for managing scheduled jobs.
+
+### Base URL
+
+```
+http://localhost:4001/api/jobs
+```
+
+### Jobs Endpoints
+
+#### 1. Create Job
+
+**Endpoint:** `POST /api/jobs`
+
+**Request Body:**
+```json
+{
+  "name": "Daily Backup",
+  "type": "backup",
+  "schedule": "0 0 * * *",
+  "payload": {
+    "target": "database"
+  }
+}
+```
+
+#### 2. Get All Jobs
+
+**Endpoint:** `GET /api/jobs`
+
+#### 3. Get Job by ID
+
+**Endpoint:** `GET /api/jobs/:id`
+
+#### 4. Pause Job
+
+**Endpoint:** `POST /api/jobs/:id/pause`
+
+#### 5. Resume Job
+
+**Endpoint:** `POST /api/jobs/:id/resume`
+
+#### 6. Delete Job
+
+**Endpoint:** `DELETE /api/jobs/:id`
 
 ---
 
@@ -264,8 +389,42 @@ The service will start on port 4001 by default.
 ### Example cURL Commands
 
 ```bash
+# Create a task
+curl -X POST http://localhost:4001/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"type":"email","payload":{"to":"user@example.com"},"priority":5}'
+
 # Get all tasks
-curl http://localhost:4001/tasks
+curl http://localhost:4001/api/tasks
+
+# Get task by ID
+curl http://localhost:4001/api/tasks/1
+
+# Retry a failed task
+curl -X POST http://localhost:4001/api/tasks/2/retry \
+  -H "Content-Type: application/json" \
+  -d '{"resetAttempts": true}'
+
+# Cancel a task
+curl -X POST http://localhost:4001/api/tasks/3/cancel
+
+# Get task logs
+curl http://localhost:4001/api/tasks/1/logs
+
+# Create a scheduled job
+curl -X POST http://localhost:4001/api/jobs \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Daily Backup","type":"backup","schedule":"0 0 * * *","payload":{"target":"database"}}'
+
+# Get all jobs
+curl http://localhost:4001/api/jobs
+
+# Pause a job
+curl -X POST http://localhost:4001/api/jobs/1/pause
+
+# Delete a job
+curl -X DELETE http://localhost:4001/api/jobs/1
+```
 
 # Get tasks by status
 curl http://localhost:4001/tasks?status=failed
