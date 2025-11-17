@@ -15,7 +15,8 @@ COPY backend/common ../common/
 
 # Install common module first
 WORKDIR /app/backend/common
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --no-frozen-lockfile && \
+    pnpm run build
 
 # Return to api-gateway and install its dependencies
 WORKDIR /app/backend/api-gateway
