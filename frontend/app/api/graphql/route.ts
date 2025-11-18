@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line no-console
         console.log('🔍 Chat mutation input:', JSON.stringify(parsedBody.variables.input, null, 2));
       }
-    } catch (parseError) {
+    } catch {
       // eslint-disable-next-line no-console
       console.log('⚠️ Could not parse request body for debugging:', body.substring(0, 200));
     }
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
               }, { status: 400 });
             }
           }
-        } catch (parseError) {
+        } catch {
           // Continue if we can't parse - let the backend handle it
         }
         
