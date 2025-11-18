@@ -63,7 +63,7 @@ const ProfilePage = () => {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                {'View All Users'}
+                View All Users
               </button>
               <button
                 onClick={handleCreateUser}
@@ -73,14 +73,14 @@ const ProfilePage = () => {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                {'Create New User'}
+                Create New User
               </button>
               {selectedUserId && (
                 <button
                   onClick={handleBackToList}
                   className="w-full py-2 px-4 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 font-medium"
                 >
-                  {'← Back to List'}
+                  ← Back to List
                 </button>
               )}
             </div>
@@ -102,7 +102,7 @@ const ProfilePage = () => {
               <div className="text-gray-400 mb-4 text-6xl">👤</div>
               <h2 className="text-xl font-semibold text-gray-800 mb-2">Select a User</h2>
               <p className="text-gray-600 mb-6">
-                {'Choose a user from the list to view their profile, or create a new user.'}
+                Choose a user from the list to view their profile, or create a new user.
               </p>
             </div>
           )}
@@ -136,7 +136,7 @@ const ProfilePage = () => {
                 onClick={() => refetch()}
                 className="mt-4 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                {'Try Again'}
+                Try Again
               </button>
             </div>
           )}
