@@ -18,20 +18,10 @@ export default function TaskDetailPanel({ task, onClose }: Pick<TaskDetailPanelP
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'logs' | 'payload'>('details');
 
-  // If no task is selected, show empty state
-  if (!task) {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="text-center text-gray-500 dark:text-gray-400">
-          <p className="text-lg font-medium mb-2">No task selected</p>
-          <p className="text-sm">Select a task from the list to view details</p>
-        </div>
-      </div>
-    );
-  }
-
   // Fetch logs from REST API (since logs are not in GraphQL)
   useEffect(() => {
+    if (!task) return; // Early exit if no task
+
     const fetchLogs = async () => {
       setLoadingLogs(true);
       try {
@@ -53,7 +43,19 @@ export default function TaskDetailPanel({ task, onClose }: Pick<TaskDetailPanelP
     if (activeTab === 'logs') {
       fetchLogs();
     }
-  }, [task.id, activeTab]);
+  }, [task?.id, activeTab]);
+
+  // If no task is selected, show empty state
+  if (!task) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="text-center text-gray-500 dark:text-gray-400">
+          <p className="text-lg font-medium mb-2">{'No task selected'}</p>
+          <p className="text-sm">{'Select a task from the list to view details'}</p>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: Task['status']) => {
     switch (status) {
