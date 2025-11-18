@@ -19,12 +19,12 @@ const authLink = new ApolloLink((operation, forward) => {
 const getGraphQLUri = () => {
   // Check if we're in the browser
   if (typeof window !== 'undefined') {
-    // Browser environment - use NEXT_PUBLIC_ prefixed env var
-    const uri = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/graphql';
+    // Browser environment - use proxy endpoint to avoid CORS and SSH tunnel issues
+    const uri = '/api/graphql'; // Use the Next.js API route proxy
     console.log('Apollo Client URI (browser):', uri);
     return uri;
   }
-  // Server environment - use API_URL or fallback
+  // Server environment - use direct connection for SSR
   const uri = process.env.API_URL || 'http://localhost:4000/graphql';
   console.log('Apollo Client URI (server):', uri);
   return uri;
