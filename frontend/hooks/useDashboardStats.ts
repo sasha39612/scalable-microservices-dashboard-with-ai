@@ -25,17 +25,21 @@ export default function useDashboardStats() {
 
   // Log errors and data for debugging
   if (error) {
+    // eslint-disable-next-line no-console
     console.error('GraphQL Error in useDashboardStats:', error);
     // Safely access error properties
     if ('networkError' in error && error.networkError) {
+      // eslint-disable-next-line no-console
       console.error('Network Error:', error.networkError);
     }
     if ('graphQLErrors' in error && error.graphQLErrors) {
+      // eslint-disable-next-line no-console
       console.error('GraphQL Errors:', error.graphQLErrors);
     }
   }
 
   if (data) {
+    // eslint-disable-next-line no-console
     console.log('Dashboard stats loaded successfully:', data);
   }
 

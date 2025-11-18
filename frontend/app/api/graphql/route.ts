@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     // Copy authorization header if present
     const authHeader = request.headers.get('authorization');
     if (authHeader) {
-      // @ts-ignore
+      // @ts-expect-error TypeScript doesn't allow index access on const headers object
       headers['Authorization'] = authHeader;
     }
 
@@ -23,15 +23,20 @@ export async function POST(request: NextRequest) {
       'http://localhost:4000/graphql'
     ].filter(Boolean);
 
+    // eslint-disable-next-line no-console
     console.log('Environment variables:');
+    // eslint-disable-next-line no-console
     console.log('- NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+    // eslint-disable-next-line no-console
     console.log('- API_URL:', process.env.API_URL);
+    // eslint-disable-next-line no-console
     console.log('- NODE_ENV:', process.env.NODE_ENV);
 
     let lastError;
     
     for (const url of possibleUrls) {
       try {
+        // eslint-disable-next-line no-console
         console.log(`Attempting to connect to: ${url}`);
         
         const response = await fetch(url!, {
@@ -41,8 +46,11 @@ export async function POST(request: NextRequest) {
         });
 
         const data = await response.text();
+        // eslint-disable-next-line no-console
         console.log(`✅ Success! Connected to: ${url}`);
+        // eslint-disable-next-line no-console
         console.log('GraphQL response status:', response.status);
+        // eslint-disable-next-line no-console
         console.log('GraphQL response preview:', data.substring(0, 200) + (data.length > 200 ? '...' : ''));
 
         return new NextResponse(data, {
@@ -55,6 +63,7 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(`❌ Failed to connect to ${url}:`, error instanceof Error ? error.message : error);
         lastError = error;
         continue;
@@ -65,6 +74,7 @@ export async function POST(request: NextRequest) {
     throw lastError;
     
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('GraphQL proxy error (all attempts failed):', error);
     return NextResponse.json(
       { 

@@ -21,11 +21,13 @@ const getGraphQLUri = () => {
   if (typeof window !== 'undefined') {
     // Browser environment - use proxy endpoint to avoid CORS and SSH tunnel issues
     const uri = '/api/graphql'; // Use the Next.js API route proxy
+    // eslint-disable-next-line no-console
     console.log('Apollo Client URI (browser):', uri);
     return uri;
   }
   // Server environment - use direct connection for SSR
   const uri = process.env.API_URL || 'http://localhost:4000/graphql';
+  // eslint-disable-next-line no-console
   console.log('Apollo Client URI (server):', uri);
   return uri;
 };
@@ -33,6 +35,7 @@ const getGraphQLUri = () => {
 const httpLink = new HttpLink({
   uri: getGraphQLUri(),
   fetch: (uri, options) => {
+    // eslint-disable-next-line no-console
     console.log('GraphQL Request:', uri, options?.body);
     return fetch(uri, options);
   }
