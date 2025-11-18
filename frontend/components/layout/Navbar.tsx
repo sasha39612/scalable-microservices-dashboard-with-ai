@@ -15,25 +15,43 @@ export default function Navbar() {
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <Link href="/" className="text-xl font-bold text-gray-900 dark:text-white">
-            Microservices Dashboard
+            {'Microservices Dashboard'}
           </Link>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8">
             <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-              Home
+              {'Home'}
             </Link>
             <Link
               href="/dashboard"
               className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
             >
-              Dashboard
+              {'Dashboard'}
+            </Link>
+            <Link
+              href="/analytics"
+              className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            >
+              {'Analytics'}
+            </Link>
+            <Link
+              href="/tasks"
+              className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            >
+              {'Tasks'}
+            </Link>
+            <Link
+              href="/ai-chat"
+              className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            >
+              {'AI Chat'}
             </Link>
             <Link
               href="/profile"
               className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
             >
-              Profile
+              {'Profile'}
             </Link>
           </div>
 
@@ -54,21 +72,42 @@ export default function Navbar() {
             className="block text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
             onClick={() => setIsOpen(false)}
           >
-            Home
+            {'Home'}
           </Link>
           <Link
             href="/dashboard"
             className="block text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
             onClick={() => setIsOpen(false)}
           >
-            Dashboard
+            {'Dashboard'}
+          </Link>
+          <Link
+            href="/analytics"
+            className="block text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            onClick={() => setIsOpen(false)}
+          >
+            {'Analytics'}
+          </Link>
+          <Link
+            href="/tasks"
+            className="block text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            onClick={() => setIsOpen(false)}
+          >
+            {'Tasks'}
+          </Link>
+          <Link
+            href="/ai-chat"
+            className="block text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            onClick={() => setIsOpen(false)}
+          >
+            {'AI Chat'}
           </Link>
           <Link
             href="/profile"
             className="block text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
             onClick={() => setIsOpen(false)}
           >
-            Profile
+            {'Profile'}
           </Link>
         </div>
       )}
