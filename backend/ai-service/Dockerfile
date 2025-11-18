@@ -44,12 +44,15 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY backend/ai-service/package.json ./backend/ai-service/
 COPY backend/common/package.json ./backend/common/
 
-# Install only production dependencies
+# Copy built common package from builder stage BEFORE installing dependencies
+# This ensures the local package is available during install
+COPY --from=builder /app/backend/common/dist ./backend/common/dist
+
+# Install only production dependencies (this will properly link the local common package)
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy built application from builder stage
 COPY --from=builder /app/backend/ai-service/dist ./backend/ai-service/dist
-COPY --from=builder /app/backend/common/dist ./backend/common/dist
 
 WORKDIR /app/backend/ai-service
 
