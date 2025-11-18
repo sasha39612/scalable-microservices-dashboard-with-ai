@@ -37,10 +37,10 @@ export default function NetworkTest() {
 
   const testGraphQLQuery = async () => {
     setIsLoading(true);
-    setTestResult('Testing GraphQL query...');
+    setTestResult('Testing GraphQL query via proxy...');
 
     try {
-      const response = await fetch('http://localhost:4000/graphql', {
+      const response = await fetch('/api/graphql', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,11 +59,12 @@ export default function NetworkTest() {
         })
       });
 
+      const data = await response.json();
+      
       if (response.ok) {
-        const data = await response.json();
-        setTestResult(`✅ GraphQL Query successful: ${JSON.stringify(data, null, 2)}`);
+        setTestResult(`✅ GraphQL Query via proxy successful: ${JSON.stringify(data, null, 2)}`);
       } else {
-        setTestResult(`❌ HTTP Error: ${response.status} ${response.statusText}`);
+        setTestResult(`❌ HTTP Error: ${response.status} ${response.statusText}\nResponse: ${JSON.stringify(data, null, 2)}`);
       }
     } catch (error) {
       setTestResult(`❌ Network Error: ${error instanceof Error ? error.message : 'Unknown error'}`);

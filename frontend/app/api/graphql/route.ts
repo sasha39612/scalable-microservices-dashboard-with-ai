@@ -15,32 +15,70 @@ export async function POST(request: NextRequest) {
       headers['Authorization'] = authHeader;
     }
 
-    console.log('Proxying GraphQL request to:', process.env.API_URL || 'http://localhost:4000/graphql');
-    console.log('Request body:', body);
+    // Try multiple possible URLs for the GraphQL endpoint
+    const possibleUrls = [
+      process.env.NEXT_PUBLIC_API_URL,
+      process.env.API_URL,
+      'http://api-gateway:4000/graphql',
+      'http://localhost:4000/graphql'
+    ].filter(Boolean);
 
-    const response = await fetch(process.env.API_URL || 'http://localhost:4000/graphql', {
-      method: 'POST',
-      headers,
-      body,
-    });
+    console.log('Environment variables:');
+    console.log('- NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+    console.log('- API_URL:', process.env.API_URL);
+    console.log('- NODE_ENV:', process.env.NODE_ENV);
 
-    const data = await response.text();
-    console.log('GraphQL response status:', response.status);
-    console.log('GraphQL response:', data);
+    let lastError;
+    
+    for (const url of possibleUrls) {
+      try {
+        console.log(`Attempting to connect to: ${url}`);
+        
+        const response = await fetch(url!, {
+          method: 'POST',
+          headers,
+          body,
+        });
 
-    return new NextResponse(data, {
-      status: response.status,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
-    });
+        const data = await response.text();
+        console.log(`✅ Success! Connected to: ${url}`);
+        console.log('GraphQL response status:', response.status);
+        console.log('GraphQL response preview:', data.substring(0, 200) + (data.length > 200 ? '...' : ''));
+
+        return new NextResponse(data, {
+          status: response.status,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          },
+        });
+      } catch (error) {
+        console.error(`❌ Failed to connect to ${url}:`, error instanceof Error ? error.message : error);
+        lastError = error;
+        continue;
+      }
+    }
+
+    // If all URLs failed, return the last error
+    throw lastError;
+    
   } catch (error) {
-    console.error('GraphQL proxy error:', error);
+    console.error('GraphQL proxy error (all attempts failed):', error);
     return NextResponse.json(
-      { errors: [{ message: 'Internal server error' }] },
+      { 
+        errors: [{ 
+          message: 'Could not connect to GraphQL server', 
+          details: error instanceof Error ? error.message : 'Unknown error',
+          attempted_urls: [
+            process.env.NEXT_PUBLIC_API_URL,
+            process.env.API_URL,
+            'http://api-gateway:4000/graphql',
+            'http://localhost:4000/graphql'
+          ].filter(Boolean)
+        }] 
+      },
       { status: 500 }
     );
   }
