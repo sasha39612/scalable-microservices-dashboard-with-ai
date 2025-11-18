@@ -34,6 +34,14 @@ export class TasksResolver {
     return this.tasksService.cancelTask(taskId);
   }
 
+  @Mutation(() => Task, { description: 'Retry a failed or cancelled task' })
+  async retryTask(
+    @Args('taskId') taskId: string,
+    @Args('resetAttempts', { nullable: true }) resetAttempts?: boolean,
+  ): Promise<Task> {
+    return this.tasksService.retryTask(taskId, resetAttempts);
+  }
+
   @Mutation(() => Job, { description: 'Create a new scheduled job' })
   async createJob(
     @Args('input') input: CreateJobInput,

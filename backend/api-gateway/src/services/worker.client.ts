@@ -208,6 +208,47 @@ export class WorkerClient {
   }
 
   /**
+   * Retry a failed or cancelled task
+   */
+  async retryTask(taskId: string, resetAttempts?: boolean): Promise<Task> {
+    try {
+      this.logger.log(`Retrying task: ${taskId}`);
+      
+      const response = await fetch(`${this.workerServiceUrl}/api/tasks/${taskId}/retry`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ resetAttempts: resetAttempts || false }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new HttpException('Task not found', HttpStatus.NOT_FOUND);
+        }
+        const error = await response.json().catch(() => ({}));
+        throw new HttpException(
+          error.message || 'Failed to retry task',
+          response.status,
+        );
+      }
+
+      const task = await response.json();
+      this.logger.log(`Task retry initiated successfully: ${taskId}`);
+      return task;
+    } catch (error) {
+      this.logger.error(`Failed to retry task: ${getErrorMessage(error)}`, getErrorStack(error));
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Worker Service is unavailable',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+  }
+
+  /**
    * Create a scheduled job
    */
   async createJob(jobDto: CreateJobDto): Promise<Job> {

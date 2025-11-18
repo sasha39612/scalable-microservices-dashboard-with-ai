@@ -45,6 +45,11 @@ export class TasksService {
     return true;
   }
 
+  async retryTask(taskId: string, resetAttempts?: boolean): Promise<Task> {
+    const task = await this.workerClient.retryTask(taskId, resetAttempts);
+    return this.mapWorkerTaskToGraphQL(task);
+  }
+
   async createJob(input: CreateJobInput): Promise<Job> {
     const job = await this.workerClient.createJob({
       name: input.name,
