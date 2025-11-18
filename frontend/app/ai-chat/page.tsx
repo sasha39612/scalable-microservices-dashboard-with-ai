@@ -30,9 +30,22 @@ export default function AIChat() {
 
     try {
       const response = await chat({
-        message,
-        conversationId: conversationId || undefined,
-        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'user',
+            content: message,
+            timestamp: new Date().toISOString(),
+          }
+        ],
+        userId: undefined,
+        context: {
+          conversationId: conversationId || undefined,
+        },
+        options: {
+          model: 'gpt-3.5-turbo',
+          temperature: 0.7,
+          maxTokens: 1000,
+        },
       });
 
       if (response) {

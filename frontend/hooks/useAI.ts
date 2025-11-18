@@ -14,10 +14,22 @@ export interface ChatMessage {
 }
 
 export interface ChatRequestInput {
-  message: string;
-  conversationId?: string;
+  messages: ChatMessageInput[];
+  userId?: string;
+  context?: Record<string, unknown>;
+  options?: ChatOptionsInput;
+}
+
+export interface ChatMessageInput {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: string;
+}
+
+export interface ChatOptionsInput {
+  temperature?: number;
+  maxTokens?: number;
   model?: string;
-  systemPrompt?: string;
 }
 
 export interface Insight {
