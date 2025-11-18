@@ -2,10 +2,10 @@
 
 import { gql } from '@apollo/client';
 import { useQuery, useMutation } from "@apollo/client/react";
-import { User, CreateUserInput } from './types';
+import { User, CreateUserInput, UpdateUserInput } from './types';
 
 // Re-export types for convenience
-export type { User, CreateUserInput };
+export type { User, CreateUserInput, UpdateUserInput };
 
 const GET_USER_QUERY = gql`
   query GetUser($id: String!) {
@@ -30,6 +30,16 @@ const GET_USERS_QUERY = gql`
 const CREATE_USER_MUTATION = gql`
   mutation CreateUser($input: CreateUserInput!) {
     createUser(input: $input) {
+      id
+      email
+      name
+    }
+  }
+`;
+
+const UPDATE_USER_MUTATION = gql`
+  mutation UpdateUser($input: UpdateUserInput!) {
+    updateUser(input: $input) {
       id
       email
       name
@@ -92,6 +102,34 @@ export function useCreateUser() {
 
   return {
     createUser,
+    loading,
+    error: error?.message || null
+  };
+}
+
+export function useUpdateUser() {
+  const [updateUserMutation, { loading, error }] = useMutation<
+    { updateUser: User },
+    { input: UpdateUserInput }
+  >(UPDATE_USER_MUTATION, {
+    refetchQueries: ['GetUser', 'GetUsers'],
+  });
+
+  const updateUser = async (input: UpdateUserInput) => {
+    try {
+      const result = await updateUserMutation({
+        variables: { input },
+      });
+      return result.data?.updateUser || null;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Error updating user:', err);
+      throw err;
+    }
+  };
+
+  return {
+    updateUser,
     loading,
     error: error?.message || null
   };

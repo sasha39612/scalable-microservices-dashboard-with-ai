@@ -16,3 +16,10 @@ export interface CreateUserInput {
   password: string;
   name: string;
 }
+
+export interface UpdateUserInput {
+  id: string;
+  email?: string;
+  password?: string;
+  name?: string;
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { User, useCreateUser } from '@/hooks/useUser';
+import { User, useCreateUser, useUpdateUser } from '@/hooks/useUser';
 
 interface ProfileFormProps {
   user?: User | null;
@@ -18,7 +18,11 @@ export default function ProfileForm({ user, onUserCreated, onCancel }: ProfileFo
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { createUser, loading, error } = useCreateUser();
+  const { createUser, loading: createLoading, error: createError } = useCreateUser();
+  const { updateUser, loading: updateLoading, error: updateError } = useUpdateUser();
+
+  const loading = createLoading || updateLoading;
+  const error = createError || updateError;
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -36,6 +40,8 @@ export default function ProfileForm({ user, onUserCreated, onCancel }: ProfileFo
     if (!user && !formData.password) {
       newErrors.password = 'Password is required';
     } else if (!user && formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    } else if (user && formData.password && formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
     
@@ -63,10 +69,27 @@ export default function ProfileForm({ user, onUserCreated, onCancel }: ProfileFo
           onUserCreated(newUser);
         }
       } else {
-        // For updating existing user, we'd need an update mutation
-        // This is a placeholder for future implementation
-        // eslint-disable-next-line no-console
-        console.log('Update user functionality not yet implemented');
+        // Updating existing user
+        const updateInput: { id: string; name?: string; email?: string; password?: string } = {
+          id: user.id,
+        };
+        
+        // Only include changed fields
+        if (formData.name !== user.name) {
+          updateInput.name = formData.name;
+        }
+        if (formData.email !== user.email) {
+          updateInput.email = formData.email;
+        }
+        if (formData.password) {
+          updateInput.password = formData.password;
+        }
+        
+        const updatedUser = await updateUser(updateInput);
+        
+        if (updatedUser && onUserCreated) {
+          onUserCreated(updatedUser);
+        }
       }
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -145,27 +168,25 @@ export default function ProfileForm({ user, onUserCreated, onCancel }: ProfileFo
           )}
         </div>
 
-        {!user && (
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.password ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Enter your password"
-            />
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-            )}
-          </div>
-        )}
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            Password {user && <span className="text-gray-500 text-xs">(leave blank to keep current)</span>}
+          </label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.password ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder={user ? "Enter new password (optional)" : "Enter your password"}
+          />
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+          )}
+        </div>
 
         <div className="flex space-x-3 pt-4">
           <button
