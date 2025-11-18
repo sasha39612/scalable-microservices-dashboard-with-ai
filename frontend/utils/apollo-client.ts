@@ -20,14 +20,22 @@ const getGraphQLUri = () => {
   // Check if we're in the browser
   if (typeof window !== 'undefined') {
     // Browser environment - use NEXT_PUBLIC_ prefixed env var
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/graphql';
+    const uri = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/graphql';
+    console.log('Apollo Client URI (browser):', uri);
+    return uri;
   }
   // Server environment - use API_URL or fallback
-  return process.env.API_URL || 'http://localhost:4000/graphql';
+  const uri = process.env.API_URL || 'http://localhost:4000/graphql';
+  console.log('Apollo Client URI (server):', uri);
+  return uri;
 };
 
 const httpLink = new HttpLink({
-  uri: getGraphQLUri()
+  uri: getGraphQLUri(),
+  fetch: (uri, options) => {
+    console.log('GraphQL Request:', uri, options?.body);
+    return fetch(uri, options);
+  }
 });
 
 // Create Apollo Client

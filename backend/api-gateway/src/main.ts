@@ -5,10 +5,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   // Configure CORS based on environment
-  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+  const corsOrigin = process.env.CORS_ORIGIN || true; // Allow all origins for debugging
   app.enableCors({
     origin: corsOrigin,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'apollo-require-preflight'],
   });
 
   const port = process.env.PORT || 4000;
