@@ -128,6 +128,18 @@ const GET_SUMMARY = gql`
   }
 `;
 
+const GET_CHAT_HISTORY = gql`
+  query GetChatHistory($userId: String!, $conversationId: String) {
+    chatHistory(userId: $userId, conversationId: $conversationId) {
+      id
+      role
+      content
+      conversationId
+      timestamp
+    }
+  }
+`;
+
 // Custom hooks
 export function useChatMessage() {
   const [sendMessage, { loading, error }] = useMutation<{ chat: ChatMessage }>(
@@ -233,6 +245,32 @@ export function useSummary(input: Record<string, unknown>) {
 
   return {
     summary: data?.summary || null,
+    loading,
+    error: error?.message || null,
+    refetch,
+  };
+}
+
+export interface ChatHistoryMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  conversationId?: string;
+  timestamp: string;
+}
+
+export function useChatHistory(userId: string, conversationId?: string) {
+  const { data, loading, error, refetch } = useQuery<{ chatHistory: ChatHistoryMessage[] }>(
+    GET_CHAT_HISTORY,
+    {
+      variables: { userId, conversationId },
+      skip: !userId,
+      fetchPolicy: 'cache-and-network',
+    }
+  );
+
+  return {
+    messages: data?.chatHistory || [],
     loading,
     error: error?.message || null,
     refetch,

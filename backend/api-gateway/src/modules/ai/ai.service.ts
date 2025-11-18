@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { AIClient } from '../../services/ai.client';
 import {
   ChatResponse,
@@ -14,12 +16,27 @@ import {
   MessageRole,
   RecommendationPriority,
 } from './ai.model';
+import { ChatMessage } from './entities/chat-message.entity';
 
 @Injectable()
 export class AIService {
-  constructor(private readonly aiClient: AIClient) {}
+  constructor(
+    private readonly aiClient: AIClient,
+    @InjectRepository(ChatMessage)
+    private readonly chatMessageRepository: Repository<ChatMessage>,
+  ) {}
 
   async chat(input: ChatRequestInput): Promise<ChatResponse> {
+    // Save user message to database
+    if (input.userId) {
+      await this.chatMessageRepository.save({
+        conversationId: input.context?.conversationId as string | undefined,
+        role: MessageRole.USER,
+        content: input.messages[input.messages.length - 1].content,
+        userId: input.userId,
+      });
+    }
+
     const response = await this.aiClient.chat({
       messages: input.messages.map(msg => ({
         role: msg.role,
@@ -35,10 +52,33 @@ export class AIService {
       } : undefined,
     });
 
+    // Save assistant response to database
+    if (input.userId && response.conversationId) {
+      await this.chatMessageRepository.save({
+        conversationId: response.conversationId,
+        role: MessageRole.ASSISTANT,
+        content: response.message,
+        userId: input.userId,
+      });
+    }
+
     return {
       ...response,
       role: response.role as MessageRole,
     };
+  }
+
+  async getChatHistory(userId: string, conversationId?: string): Promise<ChatMessage[]> {
+    const query = this.chatMessageRepository
+      .createQueryBuilder('message')
+      .where('message.userId = :userId', { userId })
+      .orderBy('message.timestamp', 'ASC');
+
+    if (conversationId) {
+      query.andWhere('message.conversationId = :conversationId', { conversationId });
+    }
+
+    return query.getMany();
   }
 
   async getInsights(input: InsightRequestInput): Promise<Insight[]> {

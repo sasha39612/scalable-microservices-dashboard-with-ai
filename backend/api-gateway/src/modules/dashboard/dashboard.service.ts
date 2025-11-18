@@ -1,6 +1,9 @@
 // src/dashboard/dashboard.service.ts
 import { Injectable, Logger } from '@nestjs/common';
-import { DashboardStat, DashboardInsight, HistoricalTrends } from './dashboard.model';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { DashboardStat, HistoricalTrends } from './dashboard.model';
+import { DashboardInsight } from './entities/dashboard-insight.entity';
 import { AIClient } from '../../services/ai.client';
 import { WorkerClient } from '../../services/worker.client';
 import { UserService } from '../user/user.service';
@@ -47,6 +50,8 @@ export class DashboardService {
     private readonly aiClient: AIClient,
     private readonly workerClient: WorkerClient,
     private readonly userService: UserService,
+    @InjectRepository(DashboardInsight)
+    private readonly insightRepository: Repository<DashboardInsight>,
   ) {}
 
   /**
@@ -356,22 +361,46 @@ export class DashboardService {
    */
   async getDashboardInsights(): Promise<DashboardInsight[]> {
     try {
+      // First, try to get recent insights from database
+      const recentInsights = await this.insightRepository.find({
+        order: { createdAt: 'DESC' },
+        take: 10,
+      });
+
+      // If we have recent insights (less than 1 hour old), return them
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      if (recentInsights.length > 0 && recentInsights[0].createdAt > oneHourAgo) {
+        return recentInsights;
+      }
+
+      // Otherwise, fetch new insights from AI service
       const aiInsights = await this.fetchAIInsights();
       
-      // Transform insights to match DashboardInsight model
-      return aiInsights.insights.map(insight => ({
-        id: insight.id || Math.random().toString(36).substr(2, 9),
-        type: insight.type || 'general',
-        title: insight.title || 'AI Insight',
-        description: insight.description || '',
-        data: insight.data || {},
-        confidence: insight.confidence,
-        recommendations: insight.recommendations || [],
-        createdAt: insight.createdAt || new Date(),
-      }));
+      // Save new insights to database
+      const insightsToSave = aiInsights.insights.map(insight => 
+        this.insightRepository.create({
+          type: insight.type || 'general',
+          title: insight.title || 'AI Insight',
+          description: insight.description || '',
+          data: insight.data || {},
+          confidence: insight.confidence,
+          recommendations: insight.recommendations || [],
+        })
+      );
+
+      if (insightsToSave.length > 0) {
+        const savedInsights = await this.insightRepository.save(insightsToSave);
+        return savedInsights;
+      }
+
+      return recentInsights;
     } catch (error) {
       this.logger.error('Failed to fetch dashboard insights', error);
-      return [];
+      // Return cached insights from database on error
+      return this.insightRepository.find({
+        order: { createdAt: 'DESC' },
+        take: 10,
+      });
     }
   }
 

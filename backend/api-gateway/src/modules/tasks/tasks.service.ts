@@ -1,10 +1,20 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { WorkerClient } from '../../services/worker.client';
-import { Task, Job, TasksResponse, CreateTaskInput, CreateJobInput, TaskFiltersInput, TaskStatus, JobStatus } from './tasks.model';
+import { TasksResponse, CreateTaskInput, CreateJobInput, TaskFiltersInput, TaskStatus, JobStatus, TaskPriority } from './tasks.model';
+import { Task } from './entities/task.entity';
+import { Job } from './entities/job.entity';
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly workerClient: WorkerClient) {}
+  constructor(
+    private readonly workerClient: WorkerClient,
+    @InjectRepository(Task)
+    private readonly taskRepository: Repository<Task>,
+    @InjectRepository(Job)
+    private readonly jobRepository: Repository<Job>,
+  ) {}
 
   async createTask(input: CreateTaskInput): Promise<Task> {
     // Map GraphQL priority to Worker Service priority (numeric values)
@@ -18,25 +28,58 @@ export class TasksService {
       priority = priorityMap[input.priority];
     }
 
-    const task = await this.workerClient.createTask({
+    const workerTask = await this.workerClient.createTask({
       type: input.type,
       payload: input.payload,
       priority,
     });
 
-    return this.mapWorkerTaskToGraphQL(task);
+    // Save to database
+    const task = this.taskRepository.create({
+      type: input.type,
+      status: TaskStatus.PENDING,
+      priority: (input.priority as TaskPriority) || TaskPriority.NORMAL,
+      payload: input.payload,
+    });
+    
+    const savedTask = await this.taskRepository.save(task);
+    
+    // Update with worker task ID
+    savedTask.id = workerTask.id;
+    await this.taskRepository.save(savedTask);
+    
+    return savedTask;
   }
 
   async getTask(taskId: string): Promise<Task> {
-    const task = await this.workerClient.getTask(taskId);
-    return this.mapWorkerTaskToGraphQL(task);
+    // Try to get from database first
+    const cachedTask = await this.taskRepository.findOne({ where: { id: taskId } });
+    if (cachedTask) {
+      return cachedTask;
+    }
+
+    // Fallback to worker service
+    const workerTask = await this.workerClient.getTask(taskId);
+    const task = this.mapWorkerTaskToGraphQL(workerTask);
+    
+    // Save to database
+    await this.taskRepository.save(task);
+    return task;
   }
 
   async getTasks(filters?: TaskFiltersInput): Promise<TasksResponse> {
+    // Get from worker service (real-time data)
     const result = await this.workerClient.getTasks(filters);
+    const tasks = result.tasks.map(task => this.mapWorkerTaskToGraphQL(task));
+    
+    // Update database cache
+    for (const task of tasks) {
+      await this.taskRepository.save(task);
+    }
+    
     return {
       ...result,
-      tasks: result.tasks.map(task => this.mapWorkerTaskToGraphQL(task)),
+      tasks,
     };
   }
 
@@ -51,23 +94,46 @@ export class TasksService {
   }
 
   async createJob(input: CreateJobInput): Promise<Job> {
-    const job = await this.workerClient.createJob({
+    const workerJob = await this.workerClient.createJob({
       name: input.name,
       type: input.type,
       schedule: input.schedule,
       payload: input.payload,
     });
-    return this.mapWorkerJobToGraphQL(job);
+    
+    const job = this.mapWorkerJobToGraphQL(workerJob);
+    
+    // Save to database
+    await this.jobRepository.save(job);
+    return job;
   }
 
   async getJobs(): Promise<Job[]> {
-    const jobs = await this.workerClient.getJobs();
-    return jobs.map(job => this.mapWorkerJobToGraphQL(job));
+    const workerJobs = await this.workerClient.getJobs();
+    const jobs = workerJobs.map(job => this.mapWorkerJobToGraphQL(job));
+    
+    // Update database cache
+    for (const job of jobs) {
+      await this.jobRepository.save(job);
+    }
+    
+    return jobs;
   }
 
   async getJob(jobId: string): Promise<Job> {
-    const job = await this.workerClient.getJob(jobId);
-    return this.mapWorkerJobToGraphQL(job);
+    // Try database first
+    const cachedJob = await this.jobRepository.findOne({ where: { id: jobId } });
+    if (cachedJob) {
+      return cachedJob;
+    }
+    
+    // Fallback to worker service
+    const workerJob = await this.workerClient.getJob(jobId);
+    const job = this.mapWorkerJobToGraphQL(workerJob);
+    
+    // Save to database
+    await this.jobRepository.save(job);
+    return job;
   }
 
   async pauseJob(jobId: string): Promise<boolean> {
@@ -113,16 +179,23 @@ export class TasksService {
       'cancelled': TaskStatus.FAILED,
     };
 
+    const priorityMap: Record<number, TaskPriority> = {
+      1: TaskPriority.LOW,
+      5: TaskPriority.NORMAL,
+      10: TaskPriority.HIGH,
+    };
+
     return {
       id: workerTask.id,
       type: workerTask.type,
       status: statusMap[workerTask.status] || TaskStatus.PENDING,
+      priority: priorityMap[workerTask.priority || 5] || TaskPriority.NORMAL,
       payload: workerTask.payload,
       result: workerTask.result,
       error: workerTask.error,
       createdAt: new Date(workerTask.createdAt),
       updatedAt: new Date(workerTask.updatedAt || workerTask.createdAt),
-    };
+    } as Task;
   }
 
   /**
@@ -153,6 +226,8 @@ export class TasksService {
       status: statusMap[workerJob.status] || JobStatus.ACTIVE,
       lastRun: workerJob.lastRun ? new Date(workerJob.lastRun) : undefined,
       nextRun: workerJob.nextRun ? new Date(workerJob.nextRun) : undefined,
-    };
+      createdAt: workerJob.createdAt ? new Date(workerJob.createdAt) : new Date(),
+      updatedAt: workerJob.updatedAt ? new Date(workerJob.updatedAt) : new Date(),
+    } as Job;
   }
 }

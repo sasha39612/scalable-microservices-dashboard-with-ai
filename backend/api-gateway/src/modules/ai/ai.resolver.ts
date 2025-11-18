@@ -12,6 +12,7 @@ import {
   SummaryResponse,
   SummaryRequestInput,
 } from './ai.model';
+import { ChatMessage } from './entities/chat-message.entity';
 
 @Resolver()
 export class AIResolver {
@@ -22,6 +23,14 @@ export class AIResolver {
     @Args('input') input: ChatRequestInput,
   ): Promise<ChatResponse> {
     return this.aiService.chat(input);
+  }
+
+  @Query(() => [ChatMessage], { description: 'Get chat history for a user' })
+  async chatHistory(
+    @Args('userId') userId: string,
+    @Args('conversationId', { nullable: true }) conversationId?: string,
+  ): Promise<ChatMessage[]> {
+    return this.aiService.getChatHistory(userId, conversationId);
   }
 
   @Query(() => [Insight], { description: 'Get AI-powered insights based on data' })

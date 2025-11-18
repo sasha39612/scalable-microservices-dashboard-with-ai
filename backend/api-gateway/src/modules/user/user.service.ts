@@ -1,44 +1,46 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateUserInput, UpdateUserInput } from 'common';
 
 @Injectable()
 export class UserService {
-  private users: User[] = [];
-  private idCounter = 1;
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
 
   async findAll(): Promise<User[]> {
-    return Promise.resolve(this.users);
+    return this.userRepository.find();
   }
 
   async findOne(id: string): Promise<User | undefined> {
-    return Promise.resolve(this.users.find((user) => user.id === id));
+    const user = await this.userRepository.findOne({ where: { id } });
+    return user || undefined;
   }
 
   async findByEmail(email: string): Promise<User | undefined> {
-    return Promise.resolve(this.users.find((user) => user.email === email));
+    const user = await this.userRepository.findOne({ where: { email } });
+    return user || undefined;
   }
 
   async create(input: CreateUserInput): Promise<User> {
-    const newUser: User = {
-      id: String(this.idCounter++),
+    const newUser = this.userRepository.create({
       email: input.email,
       password: input.password,
       name: input.name,
-    };
-    this.users.push(newUser);
-    return Promise.resolve(newUser);
+    });
+    return this.userRepository.save(newUser);
   }
 
   async update(input: UpdateUserInput): Promise<User | undefined> {
-    const userIndex = this.users.findIndex((user) => user.id === input.id);
+    const user = await this.userRepository.findOne({ where: { id: input.id } });
     
-    if (userIndex === -1) {
+    if (!user) {
       return undefined;
     }
 
-    const user = this.users[userIndex];
-    
     // Update only provided fields
     if (input.name !== undefined) {
       user.name = input.name;
@@ -50,7 +52,6 @@ export class UserService {
       user.password = input.password;
     }
 
-    this.users[userIndex] = user;
-    return Promise.resolve(user);
+    return this.userRepository.save(user);
   }
 }
