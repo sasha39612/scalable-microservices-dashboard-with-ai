@@ -1,13 +1,4 @@
-interface Task {
-  id: string;
-  type: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'retrying';
-  payload: Record<string, unknown>;
-  result?: unknown;
-  error?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Task } from '@/hooks/useTasks';
 
 interface TaskTableProps {
   tasks: Task[];

@@ -1,17 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useMutation } from '@apollo/client/react';
-import { gql } from '@apollo/client';
-
-interface Task {
-  id: string;
-  type: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'retrying';
-  payload: Record<string, unknown>;
-  result?: unknown;
-  error?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Task } from '@/hooks/useTasks';
 
 interface TaskLog {
   timestamp: string;
@@ -21,40 +9,26 @@ interface TaskLog {
 }
 
 interface TaskDetailPanelProps {
-  task: Task;
+  task: Task | null;
   onClose: () => void;
-  onRefresh: () => void;
 }
 
-// GraphQL Mutation for retrying a task
-const RETRY_TASK = gql`
-  mutation RetryTask($taskId: String!, $resetAttempts: Boolean) {
-    retryTask(taskId: $taskId, resetAttempts: $resetAttempts) {
-      id
-      type
-      status
-      payload
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export default function TaskDetailPanel({ task, onClose, onRefresh }: TaskDetailPanelProps) {
+export default function TaskDetailPanel({ task, onClose }: Pick<TaskDetailPanelProps, 'task' | 'onClose'>) {
   const [logs, setLogs] = useState<TaskLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'logs' | 'payload'>('details');
 
-  // Retry task mutation
-  const [retryTask, { loading: retrying }] = useMutation(RETRY_TASK, {
-    onCompleted: () => {
-      onRefresh();
-    },
-    onError: (err: Error) => {
-      console.error('Failed to retry task:', err);
-      alert('Failed to retry task: ' + err.message);
-    },
-  });
+  // If no task is selected, show empty state
+  if (!task) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="text-center text-gray-500 dark:text-gray-400">
+          <p className="text-lg font-medium mb-2">No task selected</p>
+          <p className="text-sm">Select a task from the list to view details</p>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch logs from REST API (since logs are not in GraphQL)
   useEffect(() => {
@@ -69,8 +43,8 @@ export default function TaskDetailPanel({ task, onClose, onRefresh }: TaskDetail
           const data = await response.json();
           setLogs(data.logs || []);
         }
-      } catch (err) {
-        console.error('Failed to fetch logs:', err);
+      } catch {
+        // Silently fail for now - logs are optional
       } finally {
         setLoadingLogs(false);
       }
@@ -80,17 +54,6 @@ export default function TaskDetailPanel({ task, onClose, onRefresh }: TaskDetail
       fetchLogs();
     }
   }, [task.id, activeTab]);
-
-  const handleRetry = async (resetAttempts: boolean) => {
-    if (confirm(`Retry this task${resetAttempts ? ' and reset attempts' : ''}?`)) {
-      await retryTask({
-        variables: {
-          taskId: task.id,
-          resetAttempts,
-        },
-      });
-    }
-  };
 
   const getStatusColor = (status: Task['status']) => {
     switch (status) {
@@ -134,8 +97,6 @@ export default function TaskDetailPanel({ task, onClose, onRefresh }: TaskDetail
       second: '2-digit',
     }).format(date);
   };
-
-  const canRetry = task.status === 'failed' || task.status === 'cancelled';
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
@@ -333,31 +294,6 @@ export default function TaskDetailPanel({ task, onClose, onRefresh }: TaskDetail
           </div>
         )}
       </div>
-
-      {/* Actions Footer */}
-      {canRetry && (
-        <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-700/50">
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleRetry(false)}
-              disabled={retrying}
-              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {retrying ? 'Retrying...' : 'Retry Task'}
-            </button>
-            <button
-              onClick={() => handleRetry(true)}
-              disabled={retrying}
-              className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {'Retry & Reset'}
-            </button>
-          </div>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">
-            {'Reset will clear the attempt counter before retrying'}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

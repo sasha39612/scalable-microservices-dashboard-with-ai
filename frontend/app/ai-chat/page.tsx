@@ -1,24 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation } from '@apollo/client/react';
-import { gql } from '@apollo/client';
 import ChatWindow from '@/components/ai-chat/ChatWindow';
 import ChatInput from '@/components/ai-chat/ChatInput';
-
-// GraphQL Mutation for sending chat messages
-const SEND_CHAT_MESSAGE = gql`
-  mutation SendChatMessage($input: ChatRequestInput!) {
-    chat(input: $input) {
-      message
-      role
-      conversationId
-      tokensUsed
-      model
-      timestamp
-    }
-  }
-`;
+import { useChatMessage } from '@/hooks/useAI';
 
 export interface Message {
   id: string;
@@ -27,74 +12,53 @@ export interface Message {
   timestamp: Date;
 }
 
-interface ChatResponse {
-  chat: {
-    message: string;
-    role: 'user' | 'assistant' | 'system';
-    conversationId?: string;
-    tokensUsed?: number;
-    model?: string;
-    timestamp: string;
-  };
-}
-
 export default function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   
-  const [sendMessage, { loading }] = useMutation<ChatResponse>(SEND_CHAT_MESSAGE, {
-    onCompleted: (data) => {
-      const response = data.chat;
-      const assistantMessage: Message = {
-        id: `${Date.now()}-assistant`,
-        role: response.role,
-        content: response.message,
-        timestamp: new Date(response.timestamp),
-      };
-      
-      setMessages((prev) => [...prev, assistantMessage]);
-      
-      if (response.conversationId) {
-        setConversationId(response.conversationId);
-      }
-    },
-    onError: (error) => {
-      console.error('Chat error:', error);
-      const errorMessage: Message = {
-        id: `${Date.now()}-error`,
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    },
-  });
+  const { chat, loading } = useChatMessage();
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim()) return;
-
-    // Add user message to chat
+  const handleSendMessage = async (message: string) => {
     const userMessage: Message = {
       id: `${Date.now()}-user`,
       role: 'user',
-      content,
+      content: message,
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, userMessage]);
+    
+    setMessages(prev => [...prev, userMessage]);
 
-    // Send message to API
     try {
-      await sendMessage({
-        variables: {
-          input: {
-            message: content,
-            conversationId,
-            context: {},
-          },
-        },
+      const response = await chat({
+        message,
+        conversationId: conversationId || undefined,
+        model: 'gpt-3.5-turbo',
       });
-    } catch (error) {
-      console.error('Failed to send message:', error);
+
+      if (response) {
+        if (response.conversationId) {
+          setConversationId(response.conversationId);
+        }
+
+        const assistantMessage: Message = {
+          id: `${Date.now()}-assistant`,
+          role: response.role,
+          content: response.message,
+          timestamp: new Date(response.timestamp),
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+      }
+    } catch {
+      // Handle error silently or use proper error handling
+      const errorMessage: Message = {
+        id: `${Date.now()}-error`,
+        role: 'assistant',
+        content: 'Sorry, I encountered an error processing your message. Please try again.',
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
     }
   };
 
@@ -103,33 +67,57 @@ export default function AIChat() {
     setConversationId(null);
   };
 
+  const handleNewChat = () => {
+    setMessages([]);
+    setConversationId(null);
+  };
+
   return (
-    <div className="container mx-auto h-[calc(100vh-120px)] flex flex-col">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg flex flex-col h-full">
-        {/* Header */}
-        <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">AI Assistant</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Ask me anything about your data and metrics
-            </p>
-          </div>
+    <div className="flex flex-col h-full max-h-[calc(100vh-200px)]">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Assistant</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Chat with AI to get insights about your data and system
+          </p>
+        </div>
+        <div className="flex space-x-3">
+          <button
+            onClick={handleNewChat}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            New Chat
+          </button>
+          <button
+            onClick={handleClearChat}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            Clear Chat
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-hidden">
+          <ChatWindow messages={messages} loading={loading} />
+        </div>
+        
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+          <ChatInput 
+            onSendMessage={handleSendMessage} 
+            disabled={loading}
+          />
+        </div>
+      </div>
+
+      {conversationId && (
+        <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+          Conversation ID: {conversationId}
           {messages.length > 0 && (
-            <button
-              onClick={handleClearChat}
-              className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              Clear Chat
-            </button>
+            <span className="ml-4">Messages: {messages.length}</span>
           )}
         </div>
-
-        {/* Chat Window */}
-        <ChatWindow messages={messages} loading={loading} />
-
-        {/* Chat Input */}
-        <ChatInput onSendMessage={handleSendMessage} disabled={loading} />
-      </div>
+      )}
     </div>
   );
 }

@@ -15,8 +15,19 @@ const authLink = new ApolloLink((operation, forward) => {
 });
 
 // HTTP link to your GraphQL endpoint
+// Use environment variable in production, fallback to localhost in development
+const getGraphQLUri = () => {
+  // Check if we're in the browser
+  if (typeof window !== 'undefined') {
+    // Browser environment - use NEXT_PUBLIC_ prefixed env var
+    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/graphql';
+  }
+  // Server environment - use API_URL or fallback
+  return process.env.API_URL || 'http://localhost:4000/graphql';
+};
+
 const httpLink = new HttpLink({
-  uri: 'http://localhost:4000/graphql'
+  uri: getGraphQLUri()
 });
 
 // Create Apollo Client
