@@ -1,4 +1,6 @@
-# src/schema.gql
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
 
 type DashboardStat {
   title: String!
@@ -7,6 +9,146 @@ type DashboardStat {
   trendValue: String
 }
 
+type ChatResponse {
+  message: String!
+  role: MessageRole!
+  conversationId: String
+  tokensUsed: Int
+  model: String
+  timestamp: DateTime!
+}
+
+type Insight {
+  id: ID!
+  type: String!
+  title: String!
+  description: String!
+  category: String!
+  confidence: Float!
+  actionable: Boolean!
+  timestamp: DateTime!
+}
+
+type AnalysisResponse {
+  insights: [Insight!]!
+  summary: String!
+  recommendations: [String!]!
+}
+
+type RecommendationsResponse {
+  recommendations: [String!]!
+  reasoning: String!
+  confidence: Float!
+  category: String!
+  timestamp: DateTime!
+}
+
+type SummaryResponse {
+  summary: String!
+  keyPoints: [String!]!
+  confidence: Float!
+  timestamp: DateTime!
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum InsightType {
+  ANALYTICS
+  RECOMMENDATIONS
+  PREDICTIONS
+  SUMMARY
+}
+
+enum DataType {
+  METRICS
+  LOGS
+  EVENTS
+  USER_BEHAVIOR
+}
+
+enum AnalysisType {
+  TREND
+  ANOMALY
+  CORRELATION
+  CLASSIFICATION
+}
+
+enum RecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+input ChatMessageInput {
+  role: MessageRole!
+  content: String!
+  timestamp: DateTime
+}
+
+input ChatOptionsInput {
+  temperature: Float
+  maxTokens: Int
+  model: String
+}
+
+input ChatRequestInput {
+  messages: [ChatMessageInput!]!
+  userId: String
+  context: JSON
+  options: ChatOptionsInput
+}
+
+input InsightRequestInput {
+  type: InsightType!
+  data: JSON!
+  userId: String
+  context: JSON
+}
+
+input AnalysisRequestInput {
+  dataType: DataType!
+  data: [JSON!]!
+  analysisType: AnalysisType
+  userId: String
+  context: JSON
+}
+
+input RecommendationsRequestInput {
+  userId: String!
+  context: JSON
+  priority: RecommendationPriority
+}
+
+input SummaryRequestInput {
+  text: String!
+  maxLength: Int
+  userId: String
+  context: JSON
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type Query {
   dashboardStats: [DashboardStat!]!
+  insights(input: InsightRequestInput!): [Insight!]!
+  recommendations(input: RecommendationsRequestInput!): RecommendationsResponse!
+  summary(input: SummaryRequestInput!): SummaryResponse!
+}
+
+type Mutation {
+  chat(input: ChatRequestInput!): ChatResponse!
+  analyzeData(input: AnalysisRequestInput!): AnalysisResponse!
+  generateSummary(input: SummaryRequestInput!): SummaryResponse!
 }

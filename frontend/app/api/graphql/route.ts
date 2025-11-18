@@ -3,6 +3,23 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
+    
+    // Debug: Log the incoming request body
+    try {
+      const parsedBody = JSON.parse(body);
+      // eslint-disable-next-line no-console
+      console.log('📨 Incoming GraphQL request:', JSON.stringify(parsedBody, null, 2));
+      
+      // Check if this is a chat mutation and log the variables
+      if (parsedBody.variables && parsedBody.variables.input) {
+        // eslint-disable-next-line no-console
+        console.log('🔍 Chat mutation input:', JSON.stringify(parsedBody.variables.input, null, 2));
+      }
+    } catch (parseError) {
+      // eslint-disable-next-line no-console
+      console.log('⚠️ Could not parse request body for debugging:', body.substring(0, 200));
+    }
+    
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -38,6 +55,68 @@ export async function POST(request: NextRequest) {
       try {
         // eslint-disable-next-line no-console
         console.log(`Attempting to connect to: ${url}`);
+        
+        // Additional validation for chat mutations
+        try {
+          const parsedBody = JSON.parse(body);
+          if (parsedBody.variables && parsedBody.variables.input && 
+              parsedBody.query && parsedBody.query.includes('chat')) {
+            const input = parsedBody.variables.input;
+            
+            // Check if this looks like a malformed chat request
+            if (input.message && !input.messages) {
+              // eslint-disable-next-line no-console
+              console.log('🚫 Detected malformed chat request - has message but no messages array');
+              // eslint-disable-next-line no-console
+              console.log('❌ Rejecting malformed request:', JSON.stringify(input, null, 2));
+              // eslint-disable-next-line no-console
+              console.log('💡 Expected format should be:');
+              // eslint-disable-next-line no-console
+              console.log('   {');
+              // eslint-disable-next-line no-console
+              console.log('     "messages": [');
+              // eslint-disable-next-line no-console
+              console.log('       {');
+              // eslint-disable-next-line no-console
+              console.log('         "role": "user",');
+              // eslint-disable-next-line no-console
+              console.log('         "content": "Your message here"');
+              // eslint-disable-next-line no-console
+              console.log('       }');
+              // eslint-disable-next-line no-console
+              console.log('     ],');
+              // eslint-disable-next-line no-console
+              console.log('     "options": {');
+              // eslint-disable-next-line no-console
+              console.log('       "model": "gpt-3.5-turbo"');
+              // eslint-disable-next-line no-console
+              console.log('     }');
+              // eslint-disable-next-line no-console
+              console.log('   }');
+              
+              return NextResponse.json({
+                errors: [{
+                  message: 'Invalid chat request format. Expected "messages" array but received "message" field.',
+                  details: 'The chat mutation requires a "messages" array, not a single "message" field.',
+                  expectedFormat: {
+                    messages: [
+                      {
+                        role: "user",
+                        content: "Your message here"
+                      }
+                    ],
+                    options: {
+                      model: "gpt-3.5-turbo"
+                    }
+                  },
+                  receivedFormat: input
+                }]
+              }, { status: 400 });
+            }
+          }
+        } catch (parseError) {
+          // Continue if we can't parse - let the backend handle it
+        }
         
         const response = await fetch(url!, {
           method: 'POST',

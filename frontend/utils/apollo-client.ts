@@ -35,8 +35,33 @@ const getGraphQLUri = () => {
 const httpLink = new HttpLink({
   uri: getGraphQLUri(),
   fetch: (uri, options) => {
-    // eslint-disable-next-line no-console
-    console.log('GraphQL Request:', uri, options?.body);
+    // Debug: Log the outgoing request
+    try {
+      if (options?.body) {
+        const parsedBody = JSON.parse(options.body as string);
+        // eslint-disable-next-line no-console
+        console.log('🚀 GraphQL Request:', JSON.stringify(parsedBody, null, 2));
+        
+        // Validate chat mutations
+        if (parsedBody.variables && parsedBody.variables.input && 
+            parsedBody.query && parsedBody.query.includes('SendChatMessage')) {
+          const input = parsedBody.variables.input;
+          
+          if (!input.messages || !Array.isArray(input.messages)) {
+            // eslint-disable-next-line no-console
+            console.error('🚫 Invalid chat request detected:', input);
+            throw new Error('Chat request must include a "messages" array');
+          }
+          
+          // eslint-disable-next-line no-console
+          console.log('✅ Chat request validation passed');
+        }
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('❌ Request validation error:', error);
+    }
+    
     return fetch(uri, options);
   }
 });

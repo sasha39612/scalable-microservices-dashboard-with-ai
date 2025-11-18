@@ -135,6 +135,25 @@ export function useChatMessage() {
   );
 
   const chat = async (input: ChatRequestInput) => {
+    // Validate input before sending
+    if (!input.messages || !Array.isArray(input.messages)) {
+      throw new Error('Chat request must include a "messages" array');
+    }
+    
+    if (input.messages.length === 0) {
+      throw new Error('Chat request must include at least one message');
+    }
+    
+    // Validate each message
+    for (const message of input.messages) {
+      if (!message.role || !message.content) {
+        throw new Error('Each message must have a role and content');
+      }
+    }
+    
+    // eslint-disable-next-line no-console
+    console.log('📤 Sending chat request:', JSON.stringify(input, null, 2));
+    
     const result = await sendMessage({
       variables: { input },
     });
