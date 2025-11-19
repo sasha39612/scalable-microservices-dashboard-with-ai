@@ -260,6 +260,12 @@ export class AIService {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async generateAIResponse(message: string, history: any[], context?: string[]): Promise<string> {
+    // Check if OpenAI is available before attempting to use it
+    if (!this.openaiService.isAvailable()) {
+      this.logger.warn('OpenAI not available, returning fallback response');
+      return `I understand you're asking about: "${message}". ${context ? `Considering the context provided, ` : ''}I'm currently running in demo mode. Please configure the OPENAI_API_KEY to enable full AI capabilities.`;
+    }
+
     // Use OpenAI for actual AI integration
     const systemMessage: ChatMessage = {
       role: 'system',
