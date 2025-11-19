@@ -91,25 +91,51 @@ export class AIClient {
     try {
       this.logger.log('Sending chat request to AI service');
       
+      // Transform the request to match AI service's expected format
+      const lastMessage = request.messages[request.messages.length - 1];
+      const aiServiceRequest = {
+        message: lastMessage.content,
+        conversationId: request.context?.conversationId as string | undefined,
+        context: request.context ? Object.keys(request.context).map(key => `${key}: ${request.context![key]}`) : undefined,
+      };
+      
+      this.logger.log(`Request payload: ${JSON.stringify(aiServiceRequest)}`);
+      
       const response = await fetch(`${this.aiServiceUrl}/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify(aiServiceRequest),
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
+        const errorText = await response.text();
+        this.logger.error(`AI service responded with status ${response.status}: ${errorText}`);
+        let error;
+        try {
+          error = JSON.parse(errorText);
+        } catch {
+          error = { message: errorText };
+        }
         throw new HttpException(
           error.message || 'Failed to get chat response',
           response.status,
         );
       }
 
-      const chatResponse = await response.json();
+      const aiServiceResponse = await response.json();
       this.logger.log('Chat response received successfully');
-      return chatResponse;
+      
+      // Transform the response back to the expected format
+      return {
+        message: aiServiceResponse.response,
+        role: 'assistant',
+        conversationId: aiServiceResponse.conversationId,
+        tokensUsed: aiServiceResponse.metadata?.tokensUsed,
+        model: aiServiceResponse.metadata?.model,
+        timestamp: new Date(aiServiceResponse.timestamp),
+      };
     } catch (error) {
       this.logger.error(`Chat request failed: ${getErrorMessage(error)}`, getErrorStack(error));
       if (error instanceof HttpException) {
