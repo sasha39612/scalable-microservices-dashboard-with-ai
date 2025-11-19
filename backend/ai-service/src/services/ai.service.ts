@@ -260,24 +260,34 @@ export class AIService {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async generateAIResponse(message: string, history: any[], context?: string[]): Promise<string> {
-    // Mock AI response - replace with actual AI integration
-    const responses = {
-      greeting: "Hello! I'm your AI assistant. How can I help you today?",
-      performance: "Based on the data, your system performance shows good metrics with 95% uptime. Consider optimizing the database queries for better response times.",
-      analytics: "The analytics show a 15% increase in user engagement this month. The most active features are the dashboard and reports.",
-      default: `I understand you're asking about: "${message}". Let me help you with that. ${context ? `Considering the context provided, ` : ''}I recommend checking the relevant documentation and monitoring your metrics.`,
+    // Use OpenAI for actual AI integration
+    const systemMessage: ChatMessage = {
+      role: 'system',
+      content: this.buildSystemPrompt(context),
     };
 
-    const lowerMessage = message.toLowerCase();
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return responses.greeting;
-    } else if (lowerMessage.includes('performance')) {
-      return responses.performance;
-    } else if (lowerMessage.includes('analytics') || lowerMessage.includes('data')) {
-      return responses.analytics;
-    }
+    const messages: ChatMessage[] = [
+      systemMessage,
+      ...history.map(h => ({
+        role: h.role as 'user' | 'assistant',
+        content: h.content,
+      })),
+    ];
 
-    return responses.default;
+    try {
+      const completion = await this.openaiService.createChatCompletion(messages, {
+        temperature: 0.7,
+        maxTokens: 2000,
+      });
+
+      return completion.content;
+    } catch (error) {
+      const err = error as Error;
+      this.logger.error(`Error generating AI response: ${err.message}`, err.stack);
+      
+      // Fallback to a generic response if OpenAI fails
+      return `I understand you're asking about: "${message}". ${context ? `Considering the context provided, ` : ''}I'm having trouble processing this request right now. Please try again or rephrase your question.`;
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
