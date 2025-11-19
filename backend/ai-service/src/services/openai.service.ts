@@ -17,7 +17,7 @@ export interface CompletionOptions {
 export class OpenAIService {
   private readonly logger = new Logger(OpenAIService.name);
   private client: OpenAI;
-  private readonly defaultModel = 'gpt-4-turbo-preview';
+  private readonly defaultModel = 'gpt-3.5-turbo';
   private readonly defaultTemperature = 0.7;
   private readonly defaultMaxTokens = 2000;
 
