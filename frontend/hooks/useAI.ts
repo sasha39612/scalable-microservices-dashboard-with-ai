@@ -6,7 +6,7 @@ import { useMutation, useQuery } from "@apollo/client/react";
 // Define interfaces
 export interface ChatMessage {
   message: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'USER' | 'ASSISTANT' | 'SYSTEM';
   conversationId?: string;
   tokensUsed?: number;
   model?: string;
@@ -21,7 +21,7 @@ export interface ChatRequestInput {
 }
 
 export interface ChatMessageInput {
-  role: 'user' | 'assistant' | 'system';
+  role: 'USER' | 'ASSISTANT' | 'SYSTEM';
   content: string;
   timestamp?: string;
 }
@@ -253,7 +253,7 @@ export function useSummary(input: Record<string, unknown>) {
 
 export interface ChatHistoryMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'USER' | 'ASSISTANT' | 'SYSTEM';
   content: string;
   conversationId?: string;
   timestamp: string;

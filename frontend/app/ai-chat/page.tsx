@@ -7,7 +7,7 @@ import { useChatMessage } from '@/hooks/useAI';
 
 export interface Message {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'USER' | 'ASSISTANT' | 'SYSTEM';
   content: string;
   timestamp: Date;
 }
@@ -21,7 +21,7 @@ export default function AIChat() {
   const handleSendMessage = async (message: string) => {
     const userMessage: Message = {
       id: `${Date.now()}-user`,
-      role: 'user',
+      role: 'USER',
       content: message,
       timestamp: new Date(),
     };
@@ -32,7 +32,7 @@ export default function AIChat() {
       const response = await chat({
         messages: [
           {
-            role: 'user',
+            role: 'USER',
             content: message,
             timestamp: new Date().toISOString(),
           }
@@ -66,7 +66,7 @@ export default function AIChat() {
       // Handle error silently or use proper error handling
       const errorMessage: Message = {
         id: `${Date.now()}-error`,
-        role: 'assistant',
+        role: 'ASSISTANT',
         content: 'Sorry, I encountered an error processing your message. Please try again.',
         timestamp: new Date(),
       };

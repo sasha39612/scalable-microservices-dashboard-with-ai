@@ -60,18 +60,18 @@ export default function ChatWindow({ messages, loading }: ChatWindowProps) {
             <div
               key={message.id}
               className={`flex ${
-                message.role === 'user' ? 'justify-end' : 'justify-start'
+                message.role === 'USER' ? 'justify-end' : 'justify-start'
               }`}
             >
               <div
                 className={`max-w-[70%] rounded-lg p-4 ${
-                  message.role === 'user'
+                  message.role === 'USER'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                 }`}
               >
                 <div className='flex items-start gap-2'>
-                  {message.role === 'assistant' && (
+                  {message.role === 'ASSISTANT' && (
                     <div className='flex-shrink-0 w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold'>
                       AI
                     </div>
@@ -80,7 +80,7 @@ export default function ChatWindow({ messages, loading }: ChatWindowProps) {
                     <p className='whitespace-pre-wrap break-words'>{message.content}</p>
                     <p
                       className={`text-xs mt-2 ${
-                        message.role === 'user'
+                        message.role === 'USER'
                           ? 'text-blue-200'
                           : 'text-gray-500 dark:text-gray-400'
                       }`}

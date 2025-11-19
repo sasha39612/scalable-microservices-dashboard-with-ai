@@ -27,10 +27,13 @@ interface ChatResponse {
 }
 
 interface InsightRequest {
-  type: 'analytics' | 'recommendations' | 'predictions' | 'summary';
-  data: Record<string, unknown>;
-  userId?: string;
-  context?: Record<string, unknown>;
+  insightType: 'performance' | 'usage' | 'trends' | 'anomalies' | 'predictions';
+  data: unknown[];
+  context?: string;
+  timeRange?: {
+    start: Date;
+    end: Date;
+  };
 }
 
 interface Insight {
@@ -124,7 +127,7 @@ export class AIClient {
    */
   async getInsights(request: InsightRequest): Promise<Insight[]> {
     try {
-      this.logger.log(`Requesting ${request.type} insights`);
+      this.logger.log(`Requesting ${request.insightType} insights`);
       
       const response = await fetch(`${this.aiServiceUrl}/ai/insights`, {
         method: 'POST',

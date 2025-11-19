@@ -119,11 +119,8 @@ export class DashboardService {
   private async fetchAIInsights(): Promise<AIInsightsData> {
     try {
       const insights = await this.aiClient.getInsights({
-        type: 'analytics',
-        data: {
-          context: 'dashboard',
-          requestedInsights: ['performance', 'trends', 'recommendations'],
-        },
+        insightType: 'trends',
+        data: [],
       });
 
       const highConfidenceCount = insights.filter(
