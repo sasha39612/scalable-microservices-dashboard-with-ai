@@ -10,15 +10,15 @@
 
 | Page | Entities Used | Tables | Status |
 |------|--------------|--------|--------|
-| **Dashboard** | Stats | `users`, `tasks`, `jobs` | ✅ 100% |
+| **Dashboard** | Stats | `users`, `tasks` | ✅ 100% |
 | **Profile** | Users | `users` | ✅ 100% |
-| **Tasks** | Tasks, Jobs | `tasks`, `jobs` | ✅ 100% |
+| **Tasks** | Tasks | `tasks` | ✅ 100% |
 | **AI Chat** | Messages | `chat_messages` | ✅ 100% |
 | **Analytics** | Insights, Trends | `dashboard_insights`, computed | ✅ 100% |
 
 ---
 
-## 🗄️ Database Tables (5 Total)
+## 🗄️ Database Tables (4 Total)
 
 ### 1. `users` Table
 **Purpose:** Store user accounts and authentication
@@ -46,24 +46,11 @@
 - createdAt, updatedAt
 ```
 **Used By:** Tasks page, Dashboard stats, Analytics
+**Note:** Only tasks with UUID IDs are cached. Worker Service is source of truth.
 
 ---
 
-### 3. `jobs` Table
-**Purpose:** Track scheduled background jobs
-```sql
-- id (UUID, PK)
-- name
-- schedule (cron)
-- status (active, paused, failed)
-- lastRun, nextRun
-- createdAt, updatedAt
-```
-**Used By:** Tasks page, Dashboard stats
-
----
-
-### 4. `chat_messages` Table
+### 3. `chat_messages` Table
 **Purpose:** Store AI conversation history
 ```sql
 - id (UUID, PK)
@@ -78,7 +65,7 @@
 
 ---
 
-### 5. `dashboard_insights` Table
+### 4. `dashboard_insights` Table
 **Purpose:** Cache AI-generated insights (1-hour TTL)
 ```sql
 - id (UUID, PK)
@@ -91,6 +78,20 @@
 - createdAt, updatedAt
 ```
 **Used By:** Analytics page, Dashboard
+
+---
+
+## ⚠️ NOT Stored in Database
+
+### Jobs (Scheduled Tasks)
+**Status:** ❌ **Not persisted to database**
+- Jobs are managed entirely by Worker Service in-memory
+- Worker Service uses integer IDs (1, 2, 3...) which don't match our UUID schema
+- GraphQL API exposes job operations, but data is fetched directly from Worker Service
+- Job entity exists for GraphQL typing only, not for database persistence
+- **Frontend:** Jobs are not currently used in the UI
+
+**Why:** Avoids ID format conflicts and keeps scheduled jobs in the Worker Service where they belong.
 
 ---
 

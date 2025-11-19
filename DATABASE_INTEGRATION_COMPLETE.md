@@ -25,18 +25,9 @@ All application data is now persisted to PostgreSQL database instead of in-memor
   - `result` (JSONB, nullable)
   - `error` (nullable)
   - `createdAt`, `updatedAt` (Timestamps)
+- **Note**: Only tasks with UUID IDs are cached. Worker Service is source of truth.
 
-### 3. Job Entity (`jobs` table)
-- **Location**: `backend/api-gateway/src/modules/tasks/entities/job.entity.ts`
-- **Fields**:
-  - `id` (UUID, Primary Key)
-  - `name`
-  - `schedule` (Cron expression)
-  - `status` (Enum: active, paused, failed)
-  - `lastRun`, `nextRun` (Timestamps, nullable)
-  - `createdAt`, `updatedAt` (Timestamps)
-
-### 4. ChatMessage Entity (`chat_messages` table)
+### 3. ChatMessage Entity (`chat_messages` table)
 - **Location**: `backend/api-gateway/src/modules/ai/entities/chat-message.entity.ts`
 - **Fields**:
   - `id` (UUID, Primary Key)
@@ -47,7 +38,7 @@ All application data is now persisted to PostgreSQL database instead of in-memor
   - `timestamp` (Timestamp)
 - **Relations**: ManyToOne with User
 
-### 5. DashboardInsight Entity (`dashboard_insights` table)
+### 4. DashboardInsight Entity (`dashboard_insights` table)
 - **Location**: `backend/api-gateway/src/modules/dashboard/entities/dashboard-insight.entity.ts`
 - **Fields**:
   - `id` (UUID, Primary Key)
@@ -67,9 +58,10 @@ All application data is now persisted to PostgreSQL database instead of in-memor
 - **Methods**: `findAll()`, `findOne()`, `findByEmail()`, `create()`, `update()`
 
 ### TasksService
-- ✅ Caches tasks from Worker Service to database
+- ✅ Caches tasks from Worker Service to database (only UUID IDs)
 - ✅ Fetches from DB cache when available
 - ✅ Syncs with Worker Service for real-time data
+- ❌ Jobs are NOT cached in database (integer IDs from Worker Service)
 - **Methods**: `createTask()`, `getTask()`, `getTasks()`, `createJob()`, `getJobs()`, `getJob()`
 
 ### AIService
@@ -116,13 +108,14 @@ TypeOrmModule.forRoot({
 
 ### 2. Data Persistence
 - ✅ Users persist across restarts
-- ✅ Tasks cached in database
-- ✅ Jobs tracked in database
+- ✅ Tasks cached in database (UUID IDs only)
+- ❌ Jobs NOT in database (Worker Service manages with integer IDs)
 - ✅ Chat history stored permanently
 - ✅ Dashboard insights cached for performance
 
 ### 3. Hybrid Approach
-- **Tasks & Jobs**: Worker Service is source of truth, database is cache
+- **Tasks**: Worker Service is source of truth, database caches UUID-based tasks only
+- **Jobs**: Worker Service only (not in database due to ID format mismatch)
 - **Users, ChatMessages, Insights**: Database is primary storage
 
 ### 4. Error Resilience
@@ -134,10 +127,11 @@ TypeOrmModule.forRoot({
 After deployment, the following tables will be created automatically:
 
 1. `users` - User accounts
-2. `tasks` - Task execution records
-3. `jobs` - Scheduled job definitions
-4. `chat_messages` - AI chat conversation history
-5. `dashboard_insights` - Cached dashboard analytics
+2. `tasks` - Task execution records (cache only, UUID IDs)
+3. `chat_messages` - AI conversation history
+4. `dashboard_insights` - Cached dashboard analytics
+
+**Note:** Jobs are NOT stored in database - they're managed by Worker Service with integer IDs.
 
 ## Testing
 

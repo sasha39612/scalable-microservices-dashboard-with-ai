@@ -86,9 +86,9 @@ export class AIClient {
    */
   async chat(request: ChatRequest): Promise<ChatResponse> {
     try {
-      this.logger.log(`Sending chat request with ${request.messages.length} messages`);
+      this.logger.log('Sending chat request to AI service');
       
-      const response = await fetch(`${this.aiServiceUrl}/api/chat`, {
+      const response = await fetch(`${this.aiServiceUrl}/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ export class AIClient {
     try {
       this.logger.log(`Requesting ${request.type} insights`);
       
-      const response = await fetch(`${this.aiServiceUrl}/api/insights`, {
+      const response = await fetch(`${this.aiServiceUrl}/ai/insights`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,7 +164,7 @@ export class AIClient {
     try {
       this.logger.log(`Analyzing ${request.dataType} data (${request.data.length} items)`);
       
-      const response = await fetch(`${this.aiServiceUrl}/api/analyze`, {
+      const response = await fetch(`${this.aiServiceUrl}/ai/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -214,7 +214,7 @@ export class AIClient {
     try {
       this.logger.log(`Getting recommendations for user: ${request.userId}`);
       
-      const response = await fetch(`${this.aiServiceUrl}/api/recommendations`, {
+      const response = await fetch(`${this.aiServiceUrl}/ai/recommendations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

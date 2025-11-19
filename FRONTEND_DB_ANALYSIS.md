@@ -154,55 +154,27 @@ const GET_CHAT_HISTORY = gql`
 - Service method: `getChatHistory(userId, conversationId?)`
 - Resolver: `chatHistory` query added
 
-### 2. **Job Management (Partially Integrated)**
+### 2. **Job Management (Not Implemented)**
 
-**Frontend Hooks Needed:**
-```typescript
-// frontend/hooks/useTasks.ts - ADD JOB QUERIES
+**Status:** ❌ **Jobs are NOT integrated in frontend or database**
 
-export function useJobs() {
-  const { data, loading, error, refetch } = useQuery<{ jobs: Job[] }>(
-    GET_JOBS_QUERY
-  );
+**Current Implementation:**
+- ✅ GraphQL API exists (queries: `jobs`, `job` | mutations: `createJob`, `pauseJob`, `resumeJob`, `deleteJob`)
+- ✅ Backend service methods work (fetches from Worker Service)
+- ❌ Jobs are NOT stored in database (Worker Service uses integer IDs, not UUIDs)
+- ❌ Frontend has NO job-related hooks or UI components
+- ❌ Tasks page mentions "jobs" but doesn't display them
 
-  return {
-    jobs: data?.jobs || [],
-    loading,
-    error: error?.message || null,
-    refetch,
-  };
-}
+**Why Not in Database:**
+- Worker Service manages jobs in-memory with integer IDs (1, 2, 3...)
+- Our database schema expects UUID primary keys
+- ID format mismatch would cause errors
+- Jobs are not used in the UI, so database caching provides no value
 
-const GET_JOBS_QUERY = gql`
-  query GetJobs {
-    jobs {
-      id
-      name
-      schedule
-      status
-      lastRun
-      nextRun
-      createdAt
-    }
-  }
-`;
-
-const CREATE_JOB_MUTATION = gql`
-  mutation CreateJob($input: CreateJobInput!) {
-    createJob(input: $input) {
-      id
-      name
-      schedule
-      status
-      createdAt
-    }
-  }
-`;
-```
-
-**Backend:** ✅ Already implemented
-- `jobs` table stores all scheduled jobs
-- Methods: `createJob()`, `getJobs()`, `getJob()`, etc.
+**If Needed in Future:**
+- Add job hooks to `frontend/hooks/useTasks.ts`
+- Create UI components for job management
+- Jobs will be fetched directly from Worker Service (no database cache)
 
 ### 3. **Analytics KPI Data (Currently Mock Data)**
 

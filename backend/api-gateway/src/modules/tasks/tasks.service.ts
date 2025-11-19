@@ -16,6 +16,14 @@ export class TasksService {
     private readonly jobRepository: Repository<Job>,
   ) {}
 
+  /**
+   * Check if a string is a valid UUID
+   */
+  private isValidUUID(id: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  }
+
   async createTask(input: CreateTaskInput): Promise<Task> {
     // Map GraphQL priority to Worker Service priority (numeric values)
     let priority: number | undefined;
@@ -34,36 +42,45 @@ export class TasksService {
       priority,
     });
 
-    // Save to database
-    const task = this.taskRepository.create({
-      type: input.type,
-      status: TaskStatus.PENDING,
-      priority: (input.priority as TaskPriority) || TaskPriority.NORMAL,
-      payload: input.payload,
-    });
+    // Convert worker task to GraphQL format
+    const task = this.mapWorkerTaskToGraphQL(workerTask);
     
-    const savedTask = await this.taskRepository.save(task);
+    // Only save to database if the ID is a valid UUID
+    if (this.isValidUUID(workerTask.id)) {
+      try {
+        await this.taskRepository.save(task);
+      } catch (error) {
+        // Ignore database errors for caching
+        console.warn('Failed to cache task in database:', error);
+      }
+    }
     
-    // Update with worker task ID
-    savedTask.id = workerTask.id;
-    await this.taskRepository.save(savedTask);
-    
-    return savedTask;
+    return task;
   }
 
   async getTask(taskId: string): Promise<Task> {
-    // Try to get from database first
-    const cachedTask = await this.taskRepository.findOne({ where: { id: taskId } });
-    if (cachedTask) {
-      return cachedTask;
+    // Try to get from database first (only if it's a valid UUID)
+    if (this.isValidUUID(taskId)) {
+      const cachedTask = await this.taskRepository.findOne({ where: { id: taskId } });
+      if (cachedTask) {
+        return cachedTask;
+      }
     }
 
     // Fallback to worker service
     const workerTask = await this.workerClient.getTask(taskId);
     const task = this.mapWorkerTaskToGraphQL(workerTask);
     
-    // Save to database
-    await this.taskRepository.save(task);
+    // Only save to database if ID is a valid UUID
+    if (this.isValidUUID(task.id)) {
+      try {
+        await this.taskRepository.save(task);
+      } catch (error) {
+        // Ignore database errors for caching
+        console.warn('Failed to cache task in database:', error);
+      }
+    }
+    
     return task;
   }
 
@@ -72,9 +89,16 @@ export class TasksService {
     const result = await this.workerClient.getTasks(filters);
     const tasks = result.tasks.map(task => this.mapWorkerTaskToGraphQL(task));
     
-    // Update database cache
+    // Update database cache (only for tasks with valid UUIDs)
     for (const task of tasks) {
-      await this.taskRepository.save(task);
+      if (this.isValidUUID(task.id)) {
+        try {
+          await this.taskRepository.save(task);
+        } catch (error) {
+          // Ignore database errors for caching
+          console.warn('Failed to cache task in database:', error);
+        }
+      }
     }
     
     return {
@@ -103,8 +127,8 @@ export class TasksService {
     
     const job = this.mapWorkerJobToGraphQL(workerJob);
     
-    // Save to database
-    await this.jobRepository.save(job);
+    // Don't save jobs to database - they're managed by worker service
+    // The integer IDs from worker service don't match our UUID schema
     return job;
   }
 
@@ -112,27 +136,17 @@ export class TasksService {
     const workerJobs = await this.workerClient.getJobs();
     const jobs = workerJobs.map(job => this.mapWorkerJobToGraphQL(job));
     
-    // Update database cache
-    for (const job of jobs) {
-      await this.jobRepository.save(job);
-    }
-    
+    // Don't cache jobs in database - they're managed by worker service
+    // The integer IDs from worker service don't match our UUID schema
     return jobs;
   }
 
   async getJob(jobId: string): Promise<Job> {
-    // Try database first
-    const cachedJob = await this.jobRepository.findOne({ where: { id: jobId } });
-    if (cachedJob) {
-      return cachedJob;
-    }
-    
-    // Fallback to worker service
+    // Get directly from worker service
+    // Don't use database cache since worker service uses integer IDs
     const workerJob = await this.workerClient.getJob(jobId);
     const job = this.mapWorkerJobToGraphQL(workerJob);
     
-    // Save to database
-    await this.jobRepository.save(job);
     return job;
   }
 
