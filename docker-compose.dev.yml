@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis-data:/data
+
   frontend:
     build:
       context: .
@@ -93,12 +106,18 @@ services:
       - NODE_ENV=development
       - PORT=5000
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - REDIS_URL=${REDIS_URL:-redis://localhost:6379}
+      - REDIS_URL=redis://redis:6379
     working_dir: /app/backend/ai-service
     command: ts-node-dev --respawn --transpile-only src/main.ts
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+volumes:
+  redis-data:
