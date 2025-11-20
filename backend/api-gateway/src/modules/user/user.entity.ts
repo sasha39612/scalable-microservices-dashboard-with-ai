@@ -21,6 +21,10 @@ export class User {
   @Column({ name: 'passwordHash' })
   password: string;
 
+  @HideField()
+  @Column({ name: 'refreshToken', nullable: true })
+  refreshToken?: string;
+
   @Field()
   @Column({
     type: 'enum',

@@ -47,6 +47,17 @@ export class AuthResolver {
     const currentUser = await this.userService.findOne(userId);
     return currentUser || null;
   }
+
+  @Public()
+  @Mutation(() => RefreshPayload, { description: 'Refresh access token using refresh token' })
+  async refreshToken(@Args('refreshToken') refreshToken: string): Promise<RefreshPayload> {
+    return this.authService.refreshTokens(refreshToken);
+  }
+
+  @Mutation(() => Boolean, { description: 'Logout user and invalidate refresh token' })
+  async logout(@Args('userId') userId: string): Promise<boolean> {
+    return this.authService.logout(userId);
+  }
 }
 
 // GraphQL Object Type for Auth Response
@@ -56,6 +67,21 @@ import { ObjectType, Field } from '@nestjs/graphql';
 export class AuthPayload {
   @Field()
   accessToken: string;
+
+  @Field()
+  refreshToken: string;
+
+  @Field(() => User)
+  user: User;
+}
+
+@ObjectType()
+export class RefreshPayload {
+  @Field()
+  accessToken: string;
+
+  @Field()
+  refreshToken: string;
 
   @Field(() => User)
   user: User;

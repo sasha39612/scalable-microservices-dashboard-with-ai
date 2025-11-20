@@ -5,5 +5,9 @@ metadata:
 data:
   NODE_ENV: "development"
   NEXT_PUBLIC_API_URL: "http://api-gateway:4000/graphql"
-  JWT_SECRET: "your-jwt-secret-key"
-  JWT_EXPIRATION: "24h"
+  # JWT Configuration - REPLACE THESE IN PRODUCTION
+  # Generate secrets using: openssl rand -base64 64
+  JWT_ACCESS_SECRET: "REPLACE-WITH-STRONG-SECRET-MINIMUM-32-CHARS"
+  JWT_REFRESH_SECRET: "REPLACE-WITH-DIFFERENT-STRONG-SECRET-MINIMUM-32-CHARS"
+  JWT_ACCESS_EXPIRATION: "15m"
+  JWT_REFRESH_EXPIRATION: "7d"

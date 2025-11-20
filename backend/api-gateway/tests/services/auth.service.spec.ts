@@ -21,10 +21,12 @@ describe('AuthService', () => {
       create: jest.fn().mockResolvedValue(mockUser),
       findByEmail: jest.fn(),
       findOne: jest.fn(),
+      updateRefreshToken: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<UserService>;
 
   jwtService = {
     signAsync: jest.fn().mockResolvedValue('jwt-token'),
+    verifyAsync: jest.fn().mockResolvedValue({ sub: '1', email: 'test@test.com', role: 'user' }),
   } as unknown as jest.Mocked<JwtService>;
 
   service = new AuthService(userService, jwtService);
@@ -45,7 +47,9 @@ describe('AuthService', () => {
 
     const result = await service.login('test@test.com', 'password');
     expect(result.accessToken).toBe('jwt-token');
+    expect(result.refreshToken).toBe('jwt-token');
     expect(result.user).toEqual(mockUser);
+    expect(userService.updateRefreshToken).toHaveBeenCalled();
   });
 
   it('login should throw UnauthorizedException if password is invalid', async () => {
