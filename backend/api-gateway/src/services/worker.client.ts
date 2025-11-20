@@ -56,10 +56,27 @@ function getErrorStack(error: unknown): string | undefined {
 @Injectable()
 export class WorkerClient {
   private readonly workerServiceUrl: string;
+  private readonly apiKey: string;
   private readonly logger = new Logger('WorkerClient');
 
   constructor() {
     this.workerServiceUrl = process.env.WORKER_SERVICE_URL || 'http://worker-service:4001';
+    this.apiKey = process.env.WORKER_SERVICE_API_KEY || '';
+    
+    if (!this.apiKey) {
+      this.logger.warn('⚠️  WORKER_SERVICE_API_KEY not set. Inter-service authentication disabled!');
+    }
+  }
+
+  /**
+   * Get headers with API key
+   */
+  private getHeaders(additionalHeaders?: Record<string, string>): HeadersInit {
+    return {
+      'Content-Type': 'application/json',
+      'X-API-Key': this.apiKey,
+      ...additionalHeaders,
+    };
   }
 
   /**
@@ -71,9 +88,7 @@ export class WorkerClient {
       
       const response = await fetch(`${this.workerServiceUrl}/api/tasks`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(taskDto),
       });
 
@@ -107,7 +122,9 @@ export class WorkerClient {
     try {
       this.logger.log(`Fetching task: ${taskId}`);
       
-      const response = await fetch(`${this.workerServiceUrl}/api/tasks/${taskId}`);
+      const response = await fetch(`${this.workerServiceUrl}/api/tasks/${taskId}`, {
+        headers: this.getHeaders(),
+      });
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -151,7 +168,9 @@ export class WorkerClient {
       const url = `${this.workerServiceUrl}/api/tasks?${queryParams.toString()}`;
       this.logger.log(`Fetching tasks with filters: ${queryParams.toString()}`);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: this.getHeaders(),
+      });
 
       if (!response.ok) {
         throw new HttpException(
@@ -182,6 +201,7 @@ export class WorkerClient {
       
       const response = await fetch(`${this.workerServiceUrl}/api/tasks/${taskId}/cancel`, {
         method: 'POST',
+        headers: this.getHeaders(),
       });
 
       if (!response.ok) {
@@ -216,9 +236,7 @@ export class WorkerClient {
       
       const response = await fetch(`${this.workerServiceUrl}/api/tasks/${taskId}/retry`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify({ resetAttempts: resetAttempts || false }),
       });
 
@@ -257,9 +275,7 @@ export class WorkerClient {
       
       const response = await fetch(`${this.workerServiceUrl}/api/jobs`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(jobDto),
       });
 
@@ -293,7 +309,9 @@ export class WorkerClient {
     try {
       this.logger.log('Fetching all jobs');
       
-      const response = await fetch(`${this.workerServiceUrl}/api/jobs`);
+      const response = await fetch(`${this.workerServiceUrl}/api/jobs`, {
+        headers: this.getHeaders(),
+      });
 
       if (!response.ok) {
         throw new HttpException(
@@ -322,7 +340,9 @@ export class WorkerClient {
     try {
       this.logger.log(`Fetching job: ${jobId}`);
       
-      const response = await fetch(`${this.workerServiceUrl}/api/jobs/${jobId}`);
+      const response = await fetch(`${this.workerServiceUrl}/api/jobs/${jobId}`, {
+        headers: this.getHeaders(),
+      });
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -356,6 +376,7 @@ export class WorkerClient {
       
       const response = await fetch(`${this.workerServiceUrl}/api/jobs/${jobId}/pause`, {
         method: 'POST',
+        headers: this.getHeaders(),
       });
 
       if (!response.ok) {
@@ -390,6 +411,7 @@ export class WorkerClient {
       
       const response = await fetch(`${this.workerServiceUrl}/api/jobs/${jobId}/resume`, {
         method: 'POST',
+        headers: this.getHeaders(),
       });
 
       if (!response.ok) {
@@ -424,6 +446,7 @@ export class WorkerClient {
       
       const response = await fetch(`${this.workerServiceUrl}/api/jobs/${jobId}`, {
         method: 'DELETE',
+        headers: this.getHeaders(),
       });
 
       if (!response.ok) {

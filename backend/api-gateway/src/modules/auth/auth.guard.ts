@@ -1,15 +1,30 @@
 import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { AuthGuard as PassportAuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
+import { IS_PUBLIC_KEY } from './decorators/public.decorator';
 
 @Injectable()
 export class GqlAuthGuard extends PassportAuthGuard('jwt') {
-  constructor(private readonly jwtService: JwtService) {
+  constructor(
+    private readonly jwtService: JwtService,
+    private reflector: Reflector,
+  ) {
     super();
   }
 
   canActivate(context: ExecutionContext) {
+    // Check if the route is marked as public
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const ctx = GqlExecutionContext.create(context);
     const { req } = ctx.getContext();
 

@@ -1,5 +1,6 @@
 import { ObjectType, Field, ID, HideField } from '@nestjs/graphql';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { UserRole } from 'common';
 
 @ObjectType()
 @Entity('users')
@@ -19,6 +20,14 @@ export class User {
   @HideField()
   @Column({ name: 'passwordHash' })
   password: string;
+
+  @Field()
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.User,
+  })
+  role: UserRole;
 
   @Field()
   @CreateDateColumn()

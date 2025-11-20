@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { WorkerClient } from './services/worker.client';
 import { AIClient } from './services/ai.client';
+import { Public } from './modules/auth/decorators/public.decorator';
 
 interface ServiceHealth {
   status: 'healthy' | 'unhealthy' | 'degraded';
@@ -34,6 +35,7 @@ export class HealthController {
   /**
    * Basic health check endpoint
    */
+  @Public()
   @Get()
   check() {
     return {
@@ -46,6 +48,7 @@ export class HealthController {
   /**
    * Comprehensive health check including all services
    */
+  @Public()
   @Get('detailed')
   async detailedCheck(): Promise<HealthCheckResponse> {
     const services = {

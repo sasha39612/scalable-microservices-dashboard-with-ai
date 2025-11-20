@@ -78,10 +78,23 @@ function getErrorStack(error: unknown): string | undefined {
 @Injectable()
 export class AIClient {
   private readonly aiServiceUrl: string;
+  private readonly apiKey: string;
   private readonly logger = new Logger('AIClient');
 
   constructor() {
     this.aiServiceUrl = process.env.AI_SERVICE_URL || 'http://ai-service:5000';
+    this.apiKey = process.env.AI_SERVICE_API_KEY || '';
+    if (!this.apiKey) {
+      this.logger.warn('AI_SERVICE_API_KEY not configured - inter-service authentication disabled');
+    }
+  }
+
+  private getHeaders(additionalHeaders?: Record<string, string>): HeadersInit {
+    return {
+      'Content-Type': 'application/json',
+      'X-API-Key': this.apiKey,
+      ...additionalHeaders,
+    };
   }
 
   /**
@@ -103,9 +116,7 @@ export class AIClient {
       
       const response = await fetch(`${this.aiServiceUrl}/ai/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(aiServiceRequest),
       });
 
@@ -157,9 +168,7 @@ export class AIClient {
       
       const response = await fetch(`${this.aiServiceUrl}/ai/insights`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(request),
       });
 
@@ -195,9 +204,7 @@ export class AIClient {
       
       const response = await fetch(`${this.aiServiceUrl}/ai/analyze`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(request),
       });
 
@@ -245,9 +252,7 @@ export class AIClient {
       
       const response = await fetch(`${this.aiServiceUrl}/ai/recommendations`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(request),
       });
 
@@ -291,9 +296,7 @@ export class AIClient {
       
       const response = await fetch(`${this.aiServiceUrl}/api/summarize`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(request),
       });
 
@@ -348,9 +351,7 @@ export class AIClient {
       
       const response = await fetch(`${this.aiServiceUrl}/api/predict`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(request),
       });
 
@@ -403,9 +404,7 @@ export class AIClient {
       
       const response = await fetch(`${this.aiServiceUrl}/api/anomalies`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(request),
       });
 
@@ -454,7 +453,10 @@ export class AIClient {
       this.logger.log(`Fetching conversation history: ${request.conversationId}`);
       
       const response = await fetch(
-        `${this.aiServiceUrl}/api/conversations?${queryParams.toString()}`
+        `${this.aiServiceUrl}/api/conversations?${queryParams.toString()}`,
+        {
+          headers: this.getHeaders(),
+        }
       );
 
       if (!response.ok) {

@@ -2,7 +2,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthResolver } from '../../src/modules/auth/auth.resolve';
 import { UserService } from '../../src/modules/user/user.service';
+import { AuthService } from '../../src/modules/auth/auth.service';
 import { User } from '../../src/modules/user/user.entity';
+import { UserRole } from '../../../common/src/types/common';
 import { GqlAuthGuard } from '../../src/modules/auth/auth.guard';
 
 describe('AuthResolver', () => {
@@ -11,11 +13,35 @@ describe('AuthResolver', () => {
 
   // TypeScript requires password field because it's part of User class
   const mockUsers: User[] = [
-    { id: '1', email: 'test1@test.com', name: 'John', password: 'password1' },
-    { id: '2', email: 'test2@test.com', name: 'Jane', password: 'password2' },
+    { 
+      id: '1', 
+      email: 'test1@test.com', 
+      name: 'John', 
+      password: 'password1',
+      role: UserRole.User,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    { 
+      id: '2', 
+      email: 'test2@test.com', 
+      name: 'Jane', 
+      password: 'password2',
+      role: UserRole.User,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
   ];
 
-  const mockUser: User = { id: '1', email: 'test1@test.com', name: 'John', password: 'password1' };
+  const mockUser: User = { 
+    id: '1', 
+    email: 'test1@test.com', 
+    name: 'John', 
+    password: 'password1',
+    role: UserRole.User,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -28,6 +54,14 @@ describe('AuthResolver', () => {
             findOne: jest.fn().mockImplementation((id: string) =>
               Promise.resolve(mockUsers.find((u) => u.id === id)),
             ),
+          },
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            login: jest.fn().mockResolvedValue({ access_token: 'test-token', user: mockUser }),
+            signup: jest.fn().mockResolvedValue({ access_token: 'test-token', user: mockUser }),
+            validateUser: jest.fn().mockResolvedValue(mockUser),
           },
         },
       ],
