@@ -98,7 +98,7 @@ POST /api/chat
   "response": "Based on your metrics...",
   "timestamp": "2025-11-17T...",
   "metadata": {
-    "model": "gpt-4-turbo-preview",
+    "model": "gpt-4o-mini",
     "tokensUsed": 250,
     "confidence": 0.85,
     "cached": false
