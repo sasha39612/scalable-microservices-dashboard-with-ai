@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { join } from 'path';
 
 import { AuthModule } from './modules/auth/auth.module';
@@ -17,6 +19,8 @@ import { Task } from './modules/tasks/entities/task.entity';
 import { Job } from './modules/tasks/entities/job.entity';
 import { ChatMessage } from './modules/ai/entities/chat-message.entity';
 import { DashboardInsight } from './modules/dashboard/entities/dashboard-insight.entity';
+import { GqlThrottlerGuard } from './guards/gql-throttler.guard';
+import { rateLimitConfig } from './config/rate-limit.config';
 
 @Module({
   imports: [
@@ -27,6 +31,8 @@ import { DashboardInsight } from './modules/dashboard/entities/dashboard-insight
       synchronize: true, // Set to false in production
       logging: process.env.NODE_ENV === 'development',
     }),
+    // Rate limiting configuration
+    ThrottlerModule.forRoot(rateLimitConfig),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
@@ -40,6 +46,14 @@ import { DashboardInsight } from './modules/dashboard/entities/dashboard-insight
     AIModule,
   ],
   controllers: [HealthController],
-  providers: [WorkerClient, AIClient],
+  providers: [
+    WorkerClient,
+    AIClient,
+    // Apply rate limiting globally
+    {
+      provide: APP_GUARD,
+      useClass: GqlThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

@@ -1,8 +1,10 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Throttle } from '@nestjs/throttler';
 import { User } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
+import { RateLimits } from '../../config/rate-limit.config';
 
 @Resolver(() => User)
 export class AuthResolver {
@@ -12,6 +14,7 @@ export class AuthResolver {
   ) {}
 
   @Public()
+  @Throttle(RateLimits.LOGIN)
   @Mutation(() => AuthPayload, { description: 'User login with email and password' })
   async login(
     @Args('email') email: string,
@@ -21,6 +24,7 @@ export class AuthResolver {
   }
 
   @Public()
+  @Throttle(RateLimits.REGISTER)
   @Mutation(() => AuthPayload, { description: 'User signup with email, password, and name' })
   async signup(
     @Args('email') email: string,
@@ -49,6 +53,7 @@ export class AuthResolver {
   }
 
   @Public()
+  @Throttle(RateLimits.AUTH)
   @Mutation(() => RefreshPayload, { description: 'Refresh access token using refresh token' })
   async refreshToken(@Args('refreshToken') refreshToken: string): Promise<RefreshPayload> {
     return this.authService.refreshTokens(refreshToken);

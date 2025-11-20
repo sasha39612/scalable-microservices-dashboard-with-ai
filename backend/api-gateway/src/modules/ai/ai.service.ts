@@ -83,10 +83,9 @@ export class AIService {
 
   async getInsights(input: InsightRequestInput): Promise<Insight[]> {
     return this.aiClient.getInsights({
-      type: input.type,
-      data: input.data,
-      userId: input.userId,
-      context: input.context,
+      insightType: input.type as 'performance' | 'usage' | 'trends' | 'anomalies' | 'predictions',
+      data: Array.isArray(input.data) ? input.data : [input.data],
+      context: typeof input.context === 'string' ? input.context : JSON.stringify(input.context),
     });
   }
 

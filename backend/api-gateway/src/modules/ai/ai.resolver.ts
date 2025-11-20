@@ -1,4 +1,5 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Throttle } from '@nestjs/throttler';
 import { AIService } from './ai.service';
 import {
   ChatResponse,
@@ -13,11 +14,13 @@ import {
   SummaryRequestInput,
 } from './ai.model';
 import { ChatMessage } from './entities/chat-message.entity';
+import { RateLimits } from '../../config/rate-limit.config';
 
 @Resolver()
 export class AIResolver {
   constructor(private readonly aiService: AIService) {}
 
+  @Throttle(RateLimits.AI_CHAT)
   @Mutation(() => ChatResponse, { description: 'Send a chat message and get AI response' })
   async chat(
     @Args('input') input: ChatRequestInput,
@@ -40,6 +43,7 @@ export class AIResolver {
     return this.aiService.getInsights(input);
   }
 
+  @Throttle(RateLimits.AI_ANALYSIS)
   @Mutation(() => AnalysisResponse, { description: 'Analyze data using AI' })
   async analyzeData(
     @Args('input') input: AnalysisRequestInput,
@@ -54,6 +58,7 @@ export class AIResolver {
     return this.aiService.getRecommendations(input);
   }
 
+  @Throttle(RateLimits.AI_SUMMARY)
   @Mutation(() => SummaryResponse, { description: 'Generate a summary from text' })
   async generateSummary(
     @Args('input') input: SummaryRequestInput,

@@ -11,6 +11,7 @@ Full-stack microservices application that aggregates multiple APIs, processes ba
 * Redis caching for API responses, job statuses, and AI results
 * PostgreSQL database with TypeORM / Prisma
 * OAuth2 authentication and secure API access
+* **Rate limiting** to prevent abuse and ensure fair usage
 
 ### AI Microservice:
 
@@ -173,7 +174,43 @@ curl http://localhost:4000/health/detailed
 - [Implementation Details](docs/HEALTH_CHECKS_IMPLEMENTATION.md)
 - [Quick Reference](docs/HEALTH_CHECKS_QUICK_REF.md)
 
-## 🚀 Deployment
+## � Security & Rate Limiting
+
+Comprehensive security measures protect the API from abuse and ensure fair usage:
+
+**Rate Limiting Features:**
+- 🛡️ **Multi-tier Rate Limiting:** Short (10/sec), Medium (100/min), Long (1000/hour)
+- 🔐 **Brute Force Protection:** Login limited to 3 attempts per minute
+- 🚫 **Spam Prevention:** Registration limited to 3 per 5 minutes
+- ⚡ **Resource Protection:** AI operations have moderate limits (5-10/min)
+- 👤 **Smart Tracking:** User ID for authenticated, IP for anonymous requests
+- 💊 **Health Check Exception:** Monitoring endpoints excluded from limits
+
+**Endpoint-Specific Limits:**
+
+| Endpoint | Limit | Purpose |
+|----------|-------|---------|
+| Login | 3/min | Prevent brute force |
+| Registration | 3/5min | Prevent spam |
+| AI Chat | 10/min | Control AI usage |
+| AI Analysis | 5/min | Protect resources |
+| Dashboard | 50/min | Standard operations |
+
+**Quick Test:**
+```bash
+# Test rate limiting
+./scripts/test-rate-limiting.sh
+
+# Response when limit exceeded (429 Too Many Requests)
+# { "errors": [{ "message": "ThrottlerException: Too Many Requests" }] }
+```
+
+📖 **Documentation:**
+- [Rate Limiting Implementation](RATE_LIMITING_IMPLEMENTATION.md)
+- [Quick Reference](RATE_LIMITING_QUICK_REF.md)
+- [Complete Summary](RATE_LIMITING_COMPLETE.md)
+
+## �🚀 Deployment
 
 * **Backend & AI microservice:** Railway / AWS
 * **Frontend:** Vercel
