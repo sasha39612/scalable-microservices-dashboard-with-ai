@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { apiGatewayAuditLogger, AuditAction } from 'common';
 import { User } from './user.entity';
 import { CreateUserInput, UpdateUserInput } from 'common';
 
@@ -52,7 +53,24 @@ export class UserService {
       user.password = input.password;
     }
 
-    return this.userRepository.save(user);
+    const updatedUser = await this.userRepository.save(user);
+
+    // Audit user update
+    await apiGatewayAuditLogger.logSuccess(
+      AuditAction.USER_UPDATE,
+      user.id,
+      {
+        userEmail: user.email,
+        userRole: user.role,
+        resource: 'user',
+        resourceId: user.id,
+        metadata: {
+          fields: Object.keys(input).filter(k => k !== 'id' && k !== 'password'),
+        },
+      }
+    );
+
+    return updatedUser;
   }
 
   async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {

@@ -21,6 +21,7 @@ import { ChatMessage } from './modules/ai/entities/chat-message.entity';
 import { DashboardInsight } from './modules/dashboard/entities/dashboard-insight.entity';
 import { GqlThrottlerGuard } from './guards/gql-throttler.guard';
 import { rateLimitConfig } from './config/rate-limit.config';
+import { AuditLoggerInitializer } from './services/audit-logger-initializer';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { rateLimitConfig } from './config/rate-limit.config';
   providers: [
     WorkerClient,
     AIClient,
+    AuditLoggerInitializer,
     // Apply rate limiting globally
     {
       provide: APP_GUARD,
