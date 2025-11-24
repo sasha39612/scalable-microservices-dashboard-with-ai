@@ -1,6 +1,12 @@
-import { ObjectType, Field, ID, HideField } from '@nestjs/graphql';
+import { ObjectType, Field, ID, HideField, registerEnumType } from '@nestjs/graphql';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { UserRole } from 'common';
+
+// Register UserRole enum for GraphQL
+registerEnumType(UserRole, {
+  name: 'UserRole',
+  description: 'User role for authorization',
+});
 
 @ObjectType()
 @Entity('users')
@@ -25,7 +31,7 @@ export class User {
   @Column({ name: 'refreshToken', nullable: true })
   refreshToken?: string;
 
-  @Field()
+  @Field(() => UserRole)
   @Column({
     type: 'enum',
     enum: UserRole,
