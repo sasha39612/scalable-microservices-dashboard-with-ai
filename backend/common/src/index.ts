@@ -7,6 +7,9 @@ export * from "./validation";
 export * from "./errors/AppError";
 export * from "./errors/error.code";
 export * from "./logging/logger";
+export * from "./logging/audit.types";
+export * from "./logging/audit-logger";
+export * from "./logging/audit-helpers";
 export * from "./config";
 export * from "./db/connection";
 

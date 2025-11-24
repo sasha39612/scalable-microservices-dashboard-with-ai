@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { apiGatewayAuditLogger, AuditAction } from 'common';
 
 import { User } from '../user/user.entity';
 import { UserService } from '../user/user.service';
@@ -33,24 +34,73 @@ export class AuthService {
 
   async signup(email: string, password: string, name: string): Promise<User> {
     const hashedPassword = await bcrypt.hash(password, 10);
-    return this.usersService.create({ email, password: hashedPassword, name });
+    const user = await this.usersService.create({ email, password: hashedPassword, name });
+    
+    // Audit log
+    await apiGatewayAuditLogger.logSuccess(
+      AuditAction.USER_SIGNUP,
+      user.id,
+      {
+        userEmail: email,
+        userRole: user.role,
+        resource: 'user',
+        resourceId: user.id,
+      }
+    );
+    
+    return user;
   }
 
   async login(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) {
+      await apiGatewayAuditLogger.logFailure(
+        AuditAction.USER_LOGIN,
+        undefined,
+        'User not found',
+        { userEmail: email, resource: 'auth' }
+      );
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
+    if (!isPasswordValid) {
+      await apiGatewayAuditLogger.logFailure(
+        AuditAction.USER_LOGIN,
+        user.id,
+        'Invalid password',
+        { userEmail: email, userRole: user.role, resource: 'auth' }
+      );
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     const tokens = await this.generateTokens(user);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+    // Audit successful login
+    await apiGatewayAuditLogger.logSuccess(
+      AuditAction.USER_LOGIN,
+      user.id,
+      {
+        userEmail: user.email,
+        userRole: user.role,
+        resource: 'auth',
+      }
+    );
 
     return { ...tokens, user };
   }
 
   async logout(userId: string): Promise<boolean> {
     await this.usersService.updateRefreshToken(userId, null);
+    
+    // Audit logout
+    await apiGatewayAuditLogger.logSuccess(
+      AuditAction.USER_LOGOUT,
+      userId,
+      { resource: 'auth' }
+    );
+    
     return true;
   }
 
@@ -64,12 +114,24 @@ export class AuthService {
       // Get user and validate stored refresh token
       const user = await this.usersService.findOne(payload.sub);
       if (!user || !user.refreshToken) {
+        await apiGatewayAuditLogger.logFailure(
+          AuditAction.TOKEN_REFRESH,
+          payload.sub,
+          'User not found or no refresh token',
+          { resource: 'auth' }
+        );
         throw new UnauthorizedException('Invalid refresh token');
       }
 
       // Compare the provided token with stored hashed token
       const refreshTokenMatches = await bcrypt.compare(refreshToken, user.refreshToken);
       if (!refreshTokenMatches) {
+        await apiGatewayAuditLogger.logFailure(
+          AuditAction.TOKEN_REFRESH,
+          user.id,
+          'Refresh token mismatch',
+          { userEmail: user.email, resource: 'auth' }
+        );
         throw new UnauthorizedException('Invalid refresh token');
       }
 
@@ -77,8 +139,25 @@ export class AuthService {
       const tokens = await this.generateTokens(user);
       await this.updateRefreshToken(user.id, tokens.refreshToken);
 
+      // Audit successful token refresh
+      await apiGatewayAuditLogger.logSuccess(
+        AuditAction.TOKEN_REFRESH,
+        user.id,
+        {
+          userEmail: user.email,
+          userRole: user.role,
+          resource: 'auth',
+        }
+      );
+
       return { ...tokens, user };
-    } catch {
+    } catch (error) {
+      await apiGatewayAuditLogger.logError(
+        AuditAction.TOKEN_REFRESH,
+        undefined,
+        error as Error,
+        { resource: 'auth' }
+      );
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
