@@ -86,7 +86,11 @@ export class AIClient {
     this.apiKey = process.env.AI_SERVICE_API_KEY || '';
     if (!this.apiKey) {
       this.logger.warn('AI_SERVICE_API_KEY not configured - inter-service authentication disabled');
+    } else {
+      this.logger.log('AI_SERVICE_API_KEY is configured');
+      this.logger.debug(`API Key length: ${this.apiKey.length} chars`);
     }
+    this.logger.log(`AI Service URL: ${this.aiServiceUrl}`);
   }
 
   private getHeaders(additionalHeaders?: Record<string, string>): HeadersInit {
