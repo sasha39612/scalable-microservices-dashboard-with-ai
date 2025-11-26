@@ -4,6 +4,7 @@ import { useState } from 'react';
 import TaskTable from '@/components/tasks/TaskTable';
 import TaskDetailPanel from '@/components/tasks/TaskDetailPanel';
 import { useTasks, useCreateTask, useCancelTask, type Task, type TaskFilters } from '@/hooks/useTasks';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function TasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -68,7 +69,8 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <ProtectedRoute>
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Task Management</h1>
@@ -145,5 +147,6 @@ export default function TasksPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

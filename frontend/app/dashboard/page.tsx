@@ -4,6 +4,7 @@ import React from 'react';
 import { FiActivity } from 'react-icons/fi';
 import StatsCard from '@/components/widgets/StatsCard';
 import useDashboardStats from '@/hooks/useDashboardStats';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 const DashboardPage = () => {
   const { stats, loading, error } = useDashboardStats();
@@ -25,7 +26,8 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <ProtectedRoute>
+      <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -62,6 +64,7 @@ const DashboardPage = () => {
         </section>
       )}
     </div>
+    </ProtectedRoute>
   );
 };
 

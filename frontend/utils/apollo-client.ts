@@ -1,15 +1,19 @@
 // utils/apollo-client.ts
 import { ApolloClient, InMemoryCache, HttpLink, ApolloLink } from '@apollo/client';
 
-// Optional: middleware link (e.g., for auth headers)
+// Auth middleware link - adds JWT token to requests
 const authLink = new ApolloLink((operation, forward) => {
-  const token = localStorage.getItem('authToken'); // or wherever you store your token
-  if (token) {
-    operation.setContext({
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  // Only access localStorage in browser environment
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      operation.setContext(({ headers = {} }) => ({
+        headers: {
+          ...headers,
+          Authorization: `Bearer ${token}`,
+        },
+      }));
+    }
   }
   return forward(operation);
 });

@@ -5,6 +5,7 @@ import { FiTrendingUp, FiUsers, FiTarget, FiBarChart } from 'react-icons/fi';
 import StatsCard from '@/components/widgets/StatsCard';
 import Charts from '@/components/analytics/Charts';
 import useDashboardStats from '@/hooks/useDashboardStats';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 const AnalyticsPage = () => {
   const { stats, loading, error } = useDashboardStats();
@@ -58,7 +59,8 @@ const AnalyticsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <ProtectedRoute>
+      <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -119,6 +121,7 @@ const AnalyticsPage = () => {
         <Charts />
       </section>
     </div>
+    </ProtectedRoute>
   );
 };
 

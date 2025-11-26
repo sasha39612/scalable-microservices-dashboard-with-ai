@@ -5,6 +5,7 @@ import { User, useUser } from '@/hooks/useUser';
 import ProfileDisplay from '@/components/profile/ProfileDisplay';
 import ProfileForm from '@/components/profile/ProfileForm';
 import UserList from '@/components/profile/UserList';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 type ViewMode = 'list' | 'view' | 'create' | 'edit';
 
@@ -43,7 +44,8 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <ProtectedRoute>
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Profile Management</h1>
         <p className="text-gray-600">Manage user profiles and information</p>
@@ -151,6 +153,7 @@ const ProfilePage = () => {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 };
 
