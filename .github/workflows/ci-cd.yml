@@ -71,13 +71,18 @@ jobs:
           --health-retries=5
 
       redis:
-        image: redis:7
+        image: redis:7-alpine
         ports: [6379:6379]
+        env:
+          REDIS_PASSWORD: test-redis-password-ci
         options: >-
-          --health-cmd="redis-cli ping"
+          --health-cmd="redis-cli -a test-redis-password-ci ping"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+        # Use command to set password
+        # Note: GitHub Actions services don't support custom commands directly
+        # So we use the REDIS_PASSWORD env var which redis:7-alpine respects
 
     steps:
       - uses: actions/checkout@v4
@@ -93,7 +98,8 @@ jobs:
         run: pnpm --filter ./backend/${{ matrix.service }} test
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: redis://:test-redis-password-ci@localhost:6379
+          REDIS_PASSWORD: test-redis-password-ci
 
   # ========================================================
   # Frontend tests (Next.js)

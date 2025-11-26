@@ -27,6 +27,10 @@ export class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  REDIS_PASSWORD?: string;
+
+  @IsOptional()
+  @IsString()
   REDIS_HOST?: string;
 
   @IsOptional()
@@ -46,6 +50,7 @@ export function validate(config: Record<string, unknown>) {
     DATABASE_URL: config.DATABASE_URL ?? undefined,
     OPENAI_API_KEY: config.OPENAI_API_KEY ?? undefined,
     REDIS_URL: config.REDIS_URL ?? undefined,
+    REDIS_PASSWORD: config.REDIS_PASSWORD ?? undefined,
     REDIS_HOST: config.REDIS_HOST ?? undefined,
     REDIS_PORT: config.REDIS_PORT ?? undefined,
     WORKER_SERVICE_URL: config.WORKER_SERVICE_URL ?? undefined,
