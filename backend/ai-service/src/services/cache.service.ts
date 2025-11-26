@@ -18,6 +18,7 @@ export class CacheService implements OnModuleDestroy {
 
   private initializeClient(): void {
     const redisUrl = process.env.REDIS_URL || process.env.REDIS_HOST;
+    const redisPassword = process.env.REDIS_PASSWORD;
 
     if (!redisUrl) {
       this.logger.warn('REDIS_URL or REDIS_HOST not configured. Caching will be disabled.');
@@ -27,12 +28,24 @@ export class CacheService implements OnModuleDestroy {
     try {
       // Parse Redis URL or create connection from host/port
       if (redisUrl.startsWith('redis://') || redisUrl.startsWith('rediss://')) {
-        this.client = new Redis(redisUrl, {
+        // If URL doesn't contain password but we have REDIS_PASSWORD, construct URL with password
+        let finalRedisUrl = redisUrl;
+        if (redisPassword && !redisUrl.includes('@')) {
+          // Extract protocol and host:port
+          const urlParts = redisUrl.match(/^(redis:\/\/|rediss:\/\/)(.+)$/);
+          if (urlParts) {
+            finalRedisUrl = `${urlParts[1]}:${redisPassword}@${urlParts[2]}`;
+          }
+        }
+
+        this.client = new Redis(finalRedisUrl, {
           retryStrategy: (times) => {
             const delay = Math.min(times * 50, 2000);
             return delay;
           },
           maxRetriesPerRequest: 3,
+          enableReadyCheck: true,
+          lazyConnect: false,
         });
       } else {
         // Fallback to host:port format
@@ -40,11 +53,14 @@ export class CacheService implements OnModuleDestroy {
         this.client = new Redis({
           host: redisUrl,
           port,
+          password: redisPassword,
           retryStrategy: (times) => {
             const delay = Math.min(times * 50, 2000);
             return delay;
           },
           maxRetriesPerRequest: 3,
+          enableReadyCheck: true,
+          lazyConnect: false,
         });
       }
 
