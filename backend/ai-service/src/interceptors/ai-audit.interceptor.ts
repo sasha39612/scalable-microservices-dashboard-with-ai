@@ -8,7 +8,7 @@ import { aiServiceAuditLogger, AuditAction } from 'common';
  */
 @Injectable()
 export class AIAuditInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest();
     const { method, url, body, headers } = request;
     
@@ -38,7 +38,7 @@ export class AIAuditInterceptor implements NestInterceptor {
     }
 
     return next.handle().pipe(
-      tap(async (response: any) => {
+      tap(async () => {
         const duration = Date.now() - startTime;
         
         await aiServiceAuditLogger.logSuccess(
@@ -60,7 +60,7 @@ export class AIAuditInterceptor implements NestInterceptor {
           }
         );
       }),
-      catchError(async (error: any) => {
+      catchError(async (error: Error) => {
         const duration = Date.now() - startTime;
         
         await aiServiceAuditLogger.logError(

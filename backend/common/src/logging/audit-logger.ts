@@ -63,7 +63,7 @@ export class AuditLogger {
     options: {
       resource?: string;
       resourceId?: string;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
       severity?: AuditSeverity;
       userEmail?: string;
       userRole?: string;
@@ -91,7 +91,7 @@ export class AuditLogger {
     options: {
       resource?: string;
       resourceId?: string;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
       severity?: AuditSeverity;
       userEmail?: string;
       userRole?: string;
@@ -120,7 +120,7 @@ export class AuditLogger {
     options: {
       resource?: string;
       resourceId?: string;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
       severity?: AuditSeverity;
       userEmail?: string;
       userRole?: string;
@@ -225,7 +225,7 @@ export class AuditLogger {
     }
 
     const conditions: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramIndex = 1;
 
     if (filters.userId) {
@@ -278,24 +278,24 @@ export class AuditLogger {
   /**
    * Map database row to AuditLogEntry
    */
-  private mapRowToAuditEntry(row: any): AuditLogEntry {
+  private mapRowToAuditEntry(row: { id: string; timestamp: Date; action: string; status: string; severity: string; user_id: string; user_email: string; user_role: string; [key: string]: unknown }): AuditLogEntry {
     return {
       id: row.id,
       timestamp: row.timestamp,
-      action: row.action,
-      status: row.status,
-      severity: row.severity,
+      action: row.action as AuditAction,
+      status: row.status as AuditStatus,
+      severity: row.severity as AuditSeverity,
       userId: row.user_id,
       userEmail: row.user_email,
       userRole: row.user_role,
-      ipAddress: row.ip_address,
-      userAgent: row.user_agent,
-      resource: row.resource,
-      resourceId: row.resource_id,
-      metadata: row.metadata,
-      errorMessage: row.error_message,
-      serviceName: row.service_name,
-      duration: row.duration,
+      ipAddress: row.ip_address as string | undefined,
+      userAgent: row.user_agent as string | undefined,
+      resource: row.resource as string | undefined,
+      resourceId: row.resource_id as string | undefined,
+      metadata: row.metadata as Record<string, unknown> | undefined,
+      errorMessage: row.error_message as string | undefined,
+      serviceName: row.service_name as string,
+      duration: row.duration as number | undefined,
     };
   }
 }

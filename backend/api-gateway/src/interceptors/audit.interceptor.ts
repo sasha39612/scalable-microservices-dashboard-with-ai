@@ -53,7 +53,7 @@ export class AuditInterceptor implements NestInterceptor {
     ['exportDashboard', AuditAction.DASHBOARD_EXPORT],
   ]);
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const gqlContext = GqlExecutionContext.create(context);
     const info = gqlContext.getInfo();
     const ctx = gqlContext.getContext();
@@ -71,7 +71,7 @@ export class AuditInterceptor implements NestInterceptor {
     const auditContext = extractAuditContextFromGraphQL(ctx);
 
     return next.handle().pipe(
-      tap(async (result: any) => {
+      tap(async (result: unknown) => {
         const duration = Date.now() - startTime;
         
         // Log successful operation
@@ -94,7 +94,7 @@ export class AuditInterceptor implements NestInterceptor {
           }
         );
       }),
-      catchError(async (error: any) => {
+      catchError(async (error: Error) => {
         const duration = Date.now() - startTime;
         
         // Log failed operation
@@ -122,21 +122,30 @@ export class AuditInterceptor implements NestInterceptor {
     );
   }
 
-  private extractResourceId(result: any, args: any): string | undefined {
+  private extractResourceId(result: unknown, args: Record<string, unknown>): string | undefined {
     if (!result) return undefined;
     
     // Try to extract ID from result
-    if (result.id) return result.id;
-    if (result.data?.id) return result.data.id;
+    if (typeof result === 'object' && result !== null) {
+      const resultObj = result as Record<string, unknown>;
+      if (typeof resultObj.id === 'string') return resultObj.id;
+      if (typeof resultObj.data === 'object' && resultObj.data !== null) {
+        const dataObj = resultObj.data as Record<string, unknown>;
+        if (typeof dataObj.id === 'string') return dataObj.id;
+      }
+    }
     
     // Try to extract ID from args
-    if (args.id) return args.id;
-    if (args.input?.id) return args.input.id;
+    if (typeof args.id === 'string') return args.id;
+    if (typeof args.input === 'object' && args.input !== null) {
+      const inputObj = args.input as Record<string, unknown>;
+      if (typeof inputObj.id === 'string') return inputObj.id;
+    }
     
     return undefined;
   }
 
-  private sanitizeArgs(args: any): any {
+  private sanitizeArgs(args: Record<string, unknown>): Record<string, unknown> {
     const sanitized = { ...args };
     
     // Remove sensitive fields
@@ -144,10 +153,11 @@ export class AuditInterceptor implements NestInterceptor {
     delete sanitized.refreshToken;
     delete sanitized.accessToken;
     
-    if (sanitized.input) {
-      delete sanitized.input.password;
-      delete sanitized.input.refreshToken;
-      delete sanitized.input.accessToken;
+    if (typeof sanitized.input === 'object' && sanitized.input !== null) {
+      const inputObj = sanitized.input as Record<string, unknown>;
+      delete inputObj.password;
+      delete inputObj.refreshToken;
+      delete inputObj.accessToken;
     }
     
     return sanitized;

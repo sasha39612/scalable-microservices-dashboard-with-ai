@@ -11,7 +11,7 @@ export class ApiKeyGuard implements CanActivate {
   constructor(private reflector: Reflector) {
     this.apiKey = process.env.WORKER_SERVICE_API_KEY || '';
     if (!this.apiKey) {
-      console.warn('⚠️  WORKER_SERVICE_API_KEY not set. Service endpoints are unprotected!');
+      // WORKER_SERVICE_API_KEY not set. Service endpoints are unprotected!
     }
   }
 

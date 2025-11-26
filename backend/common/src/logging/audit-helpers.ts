@@ -9,7 +9,7 @@ export interface AuditContext {
 /**
  * Extract audit context from Express request
  */
-export function extractAuditContext(req: any): AuditContext {
+export function extractAuditContext(req: { user?: { sub?: string; id?: string; userId?: string; email?: string; role?: string }; headers: Record<string, string | string[] | undefined>; connection?: { remoteAddress?: string }; socket?: { remoteAddress?: string }; ip?: string }): AuditContext {
   const context: AuditContext = {};
 
   // Extract user info from JWT payload (if authenticated)
@@ -36,7 +36,7 @@ export function extractAuditContext(req: any): AuditContext {
 /**
  * Extract audit context from GraphQL context
  */
-export function extractAuditContextFromGraphQL(context: any): AuditContext {
+export function extractAuditContextFromGraphQL(context: { req?: { user?: { sub?: string; id?: string; userId?: string; email?: string; role?: string }; headers: Record<string, string | string[] | undefined>; connection?: { remoteAddress?: string }; socket?: { remoteAddress?: string }; ip?: string } }): AuditContext {
   const auditContext: AuditContext = {};
 
   // Extract user info from GraphQL context
@@ -66,7 +66,7 @@ export function extractAuditContextFromGraphQL(context: any): AuditContext {
 /**
  * Sanitize metadata to remove sensitive information
  */
-export function sanitizeMetadata(metadata: Record<string, any>): Record<string, any> {
+export function sanitizeMetadata(metadata: Record<string, unknown>): Record<string, unknown> {
   const sanitized = { ...metadata };
   const sensitiveKeys = [
     'password',
@@ -84,8 +84,8 @@ export function sanitizeMetadata(metadata: Record<string, any>): Record<string, 
   for (const key of Object.keys(sanitized)) {
     if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk.toLowerCase()))) {
       sanitized[key] = '[REDACTED]';
-    } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
-      sanitized[key] = sanitizeMetadata(sanitized[key]);
+    } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null && !Array.isArray(sanitized[key])) {
+      sanitized[key] = sanitizeMetadata(sanitized[key] as Record<string, unknown>);
     }
   }
 

@@ -15,8 +15,13 @@
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "incremental": true,
-    "strictNullChecks": false
+    "strictNullChecks": false,
+    "baseUrl": ".",
+    "paths": {
+      "common": ["../common/src"],
+      "common/*": ["../common/src/*"]
+    }
   },
-  "include": ["src"],
+  "include": ["src", "../common/src"],
   "exclude": ["node_modules", "dist"]
 }

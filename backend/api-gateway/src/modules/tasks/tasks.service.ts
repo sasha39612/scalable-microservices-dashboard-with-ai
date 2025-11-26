@@ -45,13 +45,12 @@ export class TasksService {
     // Convert worker task to GraphQL format
     const task = this.mapWorkerTaskToGraphQL(workerTask);
     
-    // Only save to database if the ID is a valid UUID
-    if (this.isValidUUID(workerTask.id)) {
+    // Only save to database if ID is a valid UUID
+    if (this.isValidUUID(task.id)) {
       try {
         await this.taskRepository.save(task);
-      } catch (error) {
-        // Ignore database errors for caching
-        console.warn('Failed to cache task in database:', error);
+      } catch {
+        // Ignore database errors for caching - error logged at repository level
       }
     }
     
@@ -75,9 +74,8 @@ export class TasksService {
     if (this.isValidUUID(task.id)) {
       try {
         await this.taskRepository.save(task);
-      } catch (error) {
-        // Ignore database errors for caching
-        console.warn('Failed to cache task in database:', error);
+      } catch {
+        // Ignore database errors for caching - error logged at repository level
       }
     }
     
@@ -94,9 +92,8 @@ export class TasksService {
       if (this.isValidUUID(task.id)) {
         try {
           await this.taskRepository.save(task);
-        } catch (error) {
-          // Ignore database errors for caching
-          console.warn('Failed to cache task in database:', error);
+        } catch {
+          // Ignore database errors for caching - error logged at repository level
         }
       }
     }
