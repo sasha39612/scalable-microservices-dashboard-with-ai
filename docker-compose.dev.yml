@@ -8,20 +8,32 @@ services:
     expose:
       - "6379"  # Expose only to internal Docker network
     environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    command: >
-      redis-server
-      --requirepass ${REDIS_PASSWORD}
-      --bind 0.0.0.0
-      --protected-mode yes
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      --save 900 1
-      --save 300 10
-      --save 60 10000
-      --appendonly no
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
+    command:
+      - redis-server
+      - --requirepass
+      - $REDIS_PASSWORD
+      - --bind
+      - "0.0.0.0"
+      - --protected-mode
+      - "yes"
+      - --maxmemory
+      - "256mb"
+      - --maxmemory-policy
+      - "allkeys-lru"
+      - --save
+      - "900"
+      - "1"
+      - --save
+      - "300"
+      - "10"
+      - --save
+      - "60"
+      - "10000"
+      - --appendonly
+      - "no"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "$${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "sh", "-c", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,8 +47,6 @@ services:
       context: .
       dockerfile: frontend/Dockerfile.dev
     container_name: frontend
-    env_file:
-      - .env
     ports:
       - "3000:3000"
     volumes:
@@ -65,8 +75,6 @@ services:
       context: .
       dockerfile: backend/api-gateway/Dockerfile.dev
     container_name: api-gateway
-    env_file:
-      - .env
     ports:
       - "4000:4000"
     volumes:
@@ -78,12 +86,12 @@ services:
       - NODE_ENV=development
       - PORT=4000
       - DATABASE_URL=postgresql://dashboard_user:VO3k7I38xXKV9sNzasMuMocNH@138.199.175.38:5432/microservices_dashboard
-      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-dev-jwt-access-secret-change-in-production}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-jwt-refresh-secret-change-in-production}
       - WORKER_SERVICE_URL=http://worker-service:4001
-      - WORKER_SERVICE_API_KEY=${WORKER_SERVICE_API_KEY}
+      - WORKER_SERVICE_API_KEY=${WORKER_SERVICE_API_KEY:-worker-secret-key-change-in-production}
       - AI_SERVICE_URL=http://ai-service:5000
-      - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY}
+      - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY:-ai-secret-key-change-in-production}
     working_dir: /app/backend/api-gateway
     command: pnpm start:dev
     depends_on:
@@ -105,8 +113,6 @@ services:
       context: .
       dockerfile: backend/worker-service/Dockerfile.dev
     container_name: worker-service
-    env_file:
-      - .env
     ports:
       - "4001:4001"
     volumes:
@@ -115,7 +121,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=4001
-      - WORKER_SERVICE_API_KEY=${WORKER_SERVICE_API_KEY}
+      - WORKER_SERVICE_API_KEY=${WORKER_SERVICE_API_KEY:-worker-secret-key-change-in-production}
     working_dir: /app/backend/worker-service
     command: ts-node-dev --respawn --transpile-only src/main.ts
     healthcheck:
@@ -132,8 +138,6 @@ services:
       context: .
       dockerfile: backend/ai-service/Dockerfile.dev
     container_name: ai-service
-    env_file:
-      - .env
     ports:
       - "5000:5000"
     volumes:
@@ -143,9 +147,9 @@ services:
       - NODE_ENV=development
       - PORT=5000
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY}
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY:-ai-secret-key-change-in-production}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
     working_dir: /app/backend/ai-service
     command: ts-node-dev --respawn --transpile-only src/main.ts
     depends_on:
