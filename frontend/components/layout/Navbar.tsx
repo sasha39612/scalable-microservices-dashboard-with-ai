@@ -2,12 +2,21 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { FiMenu, FiX } from 'react-icons/fi';
+import { FiMenu, FiX, FiLogOut, FiUser } from 'react-icons/fi';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const pathname = usePathname();
 
   const toggleMenu = () => setIsOpen(!isOpen);
+
+  // Don't show navbar on login/register pages
+  if (pathname === '/login' || pathname === '/register') {
+    return null;
+  }
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-md">
@@ -19,7 +28,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
             <Link href="/" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
               {'Home'}
             </Link>
@@ -53,6 +62,31 @@ export default function Navbar() {
             >
               {'Profile'}
             </Link>
+
+            {/* User menu */}
+            {user ? (
+              <div className="flex items-center space-x-4 ml-4 border-l border-gray-300 dark:border-gray-600 pl-4">
+                <div className="flex items-center space-x-2">
+                  <FiUser className="text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{user.name}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="flex items-center space-x-1 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400"
+                  title="Logout"
+                >
+                  <FiLogOut />
+                  <span className="text-sm">Logout</span>
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold"
+              >
+                {'Login'}
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -109,6 +143,34 @@ export default function Navbar() {
           >
             {'Profile'}
           </Link>
+
+          {/* Mobile User menu */}
+          {user ? (
+            <div className="border-t border-gray-300 dark:border-gray-600 pt-2 mt-2">
+              <div className="flex items-center space-x-2 px-3 py-2">
+                <FiUser className="text-gray-600 dark:text-gray-400" />
+                <span className="text-sm text-gray-700 dark:text-gray-300">{user.name}</span>
+              </div>
+              <button
+                onClick={() => {
+                  logout();
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400"
+              >
+                <FiLogOut />
+                <span>Logout</span>
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="block text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold px-3 py-2"
+              onClick={() => setIsOpen(false)}
+            >
+              {'Login'}
+            </Link>
+          )}
         </div>
       )}
     </nav>

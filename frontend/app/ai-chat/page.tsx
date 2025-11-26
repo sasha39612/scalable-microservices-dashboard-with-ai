@@ -4,6 +4,7 @@ import { useState } from 'react';
 import ChatWindow from '@/components/ai-chat/ChatWindow';
 import ChatInput from '@/components/ai-chat/ChatInput';
 import { useChatMessage } from '@/hooks/useAI';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export interface Message {
   id: string;
@@ -86,7 +87,8 @@ export default function AIChat() {
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[calc(100vh-200px)]">
+    <ProtectedRoute>
+      <div className="flex flex-col h-full max-h-[calc(100vh-200px)]">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Assistant</h1>
@@ -132,5 +134,6 @@ export default function AIChat() {
         </div>
       )}
     </div>
+    </ProtectedRoute>
   );
 }
