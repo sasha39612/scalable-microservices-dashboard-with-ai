@@ -67,7 +67,7 @@ export interface AuditLogEntry {
   userAgent?: string;
   resource?: string;
   resourceId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   errorMessage?: string;
   serviceName: string;
   duration?: number;

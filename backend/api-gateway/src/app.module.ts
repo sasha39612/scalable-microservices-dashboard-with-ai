@@ -39,7 +39,7 @@ import { AuditLoggerInitializer } from './services/audit-logger-initializer';
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       playground: true,
       sortSchema: true,
-      context: ({ req, res }: { req: any; res: any }) => ({ req, res }),
+      context: ({ req, res }: { req: Request; res: Response }) => ({ req, res }),
     }),
     AuthModule,
     UserModule,

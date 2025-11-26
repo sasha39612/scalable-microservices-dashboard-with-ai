@@ -70,8 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('authToken');
         setToken(null);
       }
-    } catch (error) {
-      console.error('Token verification failed:', error);
+    } catch {
+      // Token verification failed, clear stored token
       localStorage.removeItem('authToken');
       setToken(null);
     } finally {

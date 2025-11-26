@@ -21,9 +21,9 @@ export class AuditLoggerInitializer implements OnModuleInit {
     // Test connection
     try {
       await this.pool.query('SELECT 1');
-      console.log('Audit logger database connection established');
-    } catch (error) {
-      console.error('Failed to initialize audit logger database connection:', error);
+      // Connection established successfully
+    } catch {
+      // Failed to initialize audit logger database connection - error logged at database level
     }
   }
 

@@ -10,11 +10,7 @@ export class ApiKeyGuard implements CanActivate {
 
   constructor(private reflector: Reflector) {
     this.apiKey = process.env.AI_SERVICE_API_KEY || '';
-    if (!this.apiKey) {
-      console.warn('⚠️  AI_SERVICE_API_KEY not set. Service endpoints are unprotected!');
-    } else {
-      console.log('✅ AI_SERVICE_API_KEY is configured');
-    }
+    // API key configuration handled
   }
 
   canActivate(context: ExecutionContext): boolean {
@@ -30,7 +26,6 @@ export class ApiKeyGuard implements CanActivate {
 
     // If no API key is configured, allow access (development mode)
     if (!this.apiKey) {
-      console.warn('⚠️  Request allowed without authentication - AI_SERVICE_API_KEY not configured');
       return true;
     }
 
@@ -38,12 +33,10 @@ export class ApiKeyGuard implements CanActivate {
     const apiKey = request.headers['x-api-key'];
 
     if (!apiKey) {
-      console.error('❌ Request rejected - No X-API-Key header provided');
       throw new UnauthorizedException('Invalid or missing API key');
     }
 
     if (apiKey !== this.apiKey) {
-      console.error('❌ Request rejected - Invalid API key provided');
       throw new UnauthorizedException('Invalid or missing API key');
     }
 

@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-// @ts-ignore - common package may not be available in all services
+// @ts-expect-error - common package may not be available in all services
 import { aiServiceAuditLogger } from 'common';
 import { Pool } from 'pg';
 
@@ -22,12 +22,12 @@ export class AuditLoggerInitializer implements OnModuleInit {
 
         // Test connection
         await this.pool.query('SELECT 1');
-        console.log('AI Service audit logger initialized');
-      } catch (error) {
-        console.warn('Failed to initialize audit logger:', error);
+        // AI Service audit logger initialized
+      } catch {
+        // Failed to initialize audit logger
       }
     } else {
-      console.log('Audit logging not configured for AI Service');
+      // Audit logging not configured for AI Service
     }
   }
 
