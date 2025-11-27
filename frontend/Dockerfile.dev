@@ -1,6 +1,9 @@
 # Use Node.js 20 Alpine as base
 FROM node:20-alpine
 
+# Upgrade busybox to fix security vulnerabilities
+RUN apk upgrade --no-cache busybox busybox-binsh ssl_client
+
 # Install pnpm globally
 RUN npm install -g pnpm
 
