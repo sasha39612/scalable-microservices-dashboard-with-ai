@@ -1,6 +1,9 @@
 # Build stage
 FROM node:20-alpine AS builder
 
+# Upgrade busybox to fix security vulnerabilities
+RUN apk upgrade --no-cache busybox busybox-binsh ssl_client
+
 WORKDIR /app
 
 # Install pnpm globally
@@ -34,6 +37,9 @@ RUN pnpm --filter frontend build
 
 # Production stage
 FROM node:20-alpine
+
+# Upgrade busybox to fix security vulnerabilities
+RUN apk upgrade --no-cache busybox busybox-binsh ssl_client
 
 WORKDIR /app
 
