@@ -3,7 +3,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { join } from 'path';
 
 import { AuthModule } from './modules/auth/auth.module';
@@ -22,6 +22,7 @@ import { DashboardInsight } from './modules/dashboard/entities/dashboard-insight
 import { GqlThrottlerGuard } from './guards/gql-throttler.guard';
 import { rateLimitConfig } from './config/rate-limit.config';
 import { AuditLoggerInitializer } from './services/audit-logger-initializer';
+import { AuditInterceptor } from './interceptors/audit.interceptor';
 
 @Module({
   imports: [
@@ -52,6 +53,11 @@ import { AuditLoggerInitializer } from './services/audit-logger-initializer';
     WorkerClient,
     AIClient,
     AuditLoggerInitializer,
+    // Apply audit logging globally
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
+    },
     // Apply rate limiting globally
     {
       provide: APP_GUARD,
