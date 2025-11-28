@@ -70,10 +70,10 @@ import { ObjectType, Field } from '@nestjs/graphql';
 
 @ObjectType()
 export class AuthPayload {
-  @Field()
+  @Field({ name: 'access_token' })
   accessToken: string;
 
-  @Field()
+  @Field({ name: 'refresh_token' })
   refreshToken: string;
 
   @Field(() => User)
@@ -82,10 +82,10 @@ export class AuthPayload {
 
 @ObjectType()
 export class RefreshPayload {
-  @Field()
+  @Field({ name: 'access_token' })
   accessToken: string;
 
-  @Field()
+  @Field({ name: 'refresh_token' })
   refreshToken: string;
 
   @Field(() => User)
