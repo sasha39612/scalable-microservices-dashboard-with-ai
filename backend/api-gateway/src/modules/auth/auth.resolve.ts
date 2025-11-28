@@ -36,6 +36,19 @@ export class AuthResolver {
     return loginResult;
   }
 
+  @Public()
+  @Throttle(RateLimits.REGISTER)
+  @Mutation(() => AuthPayload, { description: 'User registration with email, password, and name' })
+  async register(
+    @Args('email') email: string,
+    @Args('password') password: string,
+    @Args('name') name: string,
+  ): Promise<AuthPayload> {
+    await this.authService.signup(email, password, name);
+    const loginResult = await this.authService.login(email, password);
+    return loginResult;
+  }
+
   @Query(() => [User], { name: 'users' })
   getUsers() {
     return this.userService.findAll();
