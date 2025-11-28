@@ -6,14 +6,20 @@ WORKDIR /app/backend/worker-service
 RUN apk add --no-cache curl && \
     npm install -g pnpm ts-node-dev
 
-# Copy package.json first (for caching)
-COPY backend/worker-service/package.json ./
-
-# Install dependencies including devDependencies
-RUN pnpm install --include=dev
-
-# Copy common shared code
+# Copy common shared code first
 COPY backend/common ../common
+
+# Build common package
+WORKDIR /app/backend/common
+RUN pnpm install --no-frozen-lockfile && \
+    pnpm run build
+
+# Switch back to worker service directory
+WORKDIR /app/backend/worker-service
+
+# Copy package.json and install dependencies
+COPY backend/worker-service/package.json ./
+RUN pnpm install --include=dev
 
 # Copy service source code
 COPY backend/worker-service ./
