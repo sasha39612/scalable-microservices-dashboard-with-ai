@@ -6,15 +6,23 @@ WORKDIR /app/backend/ai-service
 RUN apk add --no-cache curl && \
     npm install -g pnpm ts-node-dev
 
-# Copy dependency files
-COPY backend/ai-service/package.json ./
+# Copy common shared code first
+COPY backend/common ../common
 
-# Install dependencies including dev
+# Build common package
+WORKDIR /app/backend/common
+RUN pnpm install --no-frozen-lockfile && \
+    pnpm run build
+
+# Switch back to ai service directory
+WORKDIR /app/backend/ai-service
+
+# Copy package.json and install dependencies
+COPY backend/ai-service/package.json ./
 RUN pnpm install --include=dev
 
-# Copy full source (not just src)
+# Copy service source code
 COPY backend/ai-service ./
-COPY backend/common ../common
 
 EXPOSE 5000
 
