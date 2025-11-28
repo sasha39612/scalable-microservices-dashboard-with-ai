@@ -1,5 +1,4 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-// @ts-expect-error - common package may not be available in all services
 import { aiServiceAuditLogger } from 'common';
 import { Pool } from 'pg';
 
