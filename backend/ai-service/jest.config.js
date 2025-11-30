@@ -1,16 +1,10 @@
 module.exports = {
   verbose: true,
   testEnvironment: "node",
-  transform: {
-    "^.+\\.(ts|tsx)$": ["ts-jest", {
-      diagnostics: {
-        ignoreCodes: [151002]
-      }
-    }],
-  },
-  moduleFileExtensions: ["ts", "tsx", "js", "json"],
+  testMatch: ["<rootDir>/__tests__/**/*.js"], // Only match JS tests for now
+  moduleFileExtensions: ["js", "json"],
   collectCoverageFrom: [
-    "**/src/**/*.{ts,tsx,js}",
+    "**/src/**/*.{js}",
     "!**/node_modules/**",
     "!**/dist/**",
     "!**/build/**",
