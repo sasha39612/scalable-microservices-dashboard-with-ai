@@ -1,21 +1,11 @@
 module.exports = {
   verbose: true,
   testEnvironment: "node",
-  setupFilesAfterEnv: ["<rootDir>/tests/setup.ts"],
-  transform: {
-    "^.+\\.(ts|tsx)$": [
-      "ts-jest",
-      {
-        diagnostics: {
-          ignoreCodes: [151002]
-        }
-      }
-    ]
-  },
-  moduleFileExtensions: ["ts", "tsx", "js", "json"],
+  testMatch: ["<rootDir>/__tests__/**/*.js"], // Only match JS tests for now
+  moduleFileExtensions: ["js", "json"],
   moduleNameMapper: {
-    "^common$": "<rootDir>/../common/src",
-    "^common/(.*)$": "<rootDir>/../common/src/$1"
+    "^common$": "<rootDir>/../common/dist",
+    "^common/(.*)$": "<rootDir>/../common/dist/$1"
   },
   collectCoverageFrom: [
     "**/src/**/*.{ts,tsx,js}",

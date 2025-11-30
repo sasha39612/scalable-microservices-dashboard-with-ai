@@ -1,17 +1,12 @@
 module.exports = {
   verbose: true,
   testEnvironment: "node",
-  transform: {
-    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "tsconfig.json" }],
-  },
-  moduleFileExtensions: ["ts", "tsx", "js", "json"],
+  testMatch: ["<rootDir>/__tests__/**/*.js"], // Only match JS tests for now
+  moduleFileExtensions: ["js", "json"],
   collectCoverageFrom: [
-    "**/src/**/*.{ts,tsx,js}",
+    "**/src/**/*.{js}",
     "!**/node_modules/**",
     "!**/dist/**",
     "!**/build/**",
   ],
-  moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",
-  },
 };

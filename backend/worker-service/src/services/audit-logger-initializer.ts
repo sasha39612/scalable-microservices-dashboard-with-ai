@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Pool } from 'pg';
 import { workerServiceAuditLogger } from 'common';
