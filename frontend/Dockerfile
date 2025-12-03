@@ -12,7 +12,11 @@ RUN npm install -g pnpm
 # Copy root workspace files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
-# Copy package files
+# Copy package files for all workspace packages (required for pnpm workspace resolution)
+COPY backend/common/package.json ./backend/common/package.json
+COPY backend/api-gateway/package.json ./backend/api-gateway/package.json
+COPY backend/ai-service/package.json ./backend/ai-service/package.json
+COPY backend/worker-service/package.json ./backend/worker-service/package.json
 COPY frontend/package.json ./frontend/package.json
 COPY frontend/tsconfig.json ./frontend/tsconfig.json
 COPY frontend/next.config.mjs ./frontend/next.config.mjs
@@ -22,6 +26,7 @@ COPY frontend/tailwind.config.ts ./frontend/tailwind.config.ts
 # Copy source code
 COPY frontend/app ./frontend/app
 COPY frontend/components ./frontend/components
+COPY frontend/contexts ./frontend/contexts
 COPY frontend/hooks ./frontend/hooks
 COPY frontend/styles ./frontend/styles
 COPY frontend/utils ./frontend/utils
@@ -49,7 +54,11 @@ RUN npm install -g pnpm
 # Copy root workspace files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
-# Copy package files
+# Copy package files for workspace resolution
+COPY backend/common/package.json ./backend/common/package.json
+COPY backend/api-gateway/package.json ./backend/api-gateway/package.json
+COPY backend/ai-service/package.json ./backend/ai-service/package.json
+COPY backend/worker-service/package.json ./backend/worker-service/package.json
 COPY frontend/package.json ./frontend/package.json
 COPY frontend/next.config.mjs ./frontend/next.config.mjs
 
