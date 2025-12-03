@@ -5,9 +5,6 @@ WORKDIR /app/backend/api-gateway
 # Install global dependencies
 RUN npm install -g pnpm ts-node-dev
 
-# Copy root tsconfig first (needed for extends)
-COPY tsconfig.json /app/tsconfig.json
-
 # Copy package and config files
 COPY backend/api-gateway/package.json ./package.json
 COPY backend/api-gateway/tsconfig.json ./tsconfig.json

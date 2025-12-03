@@ -1,6 +1,18 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false,
+    "isolatedModules": true,
     "baseUrl": "src",
     "paths": {
       "@config/*": ["config/*"]
@@ -8,12 +20,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,
-    "composite": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "strictPropertyInitialization": false,
-    "strict": true,
-    "target": "ES2021"
+    "composite": true
   },
   "include": ["src/**/*", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist", "tests"]
