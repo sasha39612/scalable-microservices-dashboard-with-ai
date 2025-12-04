@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { WorkerClient } from './services/worker.client';
 import { AIClient } from './services/ai.client';
+import { CacheService } from './services/cache.service';
 import { Public } from './modules/auth/decorators/public.decorator';
 
 interface ServiceHealth {
@@ -17,6 +18,7 @@ interface HealthCheckResponse {
     apiGateway: ServiceHealth;
     workerService: ServiceHealth;
     aiService: ServiceHealth;
+    cache: ServiceHealth;
   };
   uptime: number;
 }
@@ -28,6 +30,7 @@ export class HealthController {
   constructor(
     private readonly workerClient: WorkerClient,
     private readonly aiClient: AIClient,
+    private readonly cacheService: CacheService,
   ) {
     this.startTime = new Date();
   }
@@ -55,6 +58,7 @@ export class HealthController {
       apiGateway: await this.checkApiGateway(),
       workerService: await this.checkWorkerService(),
       aiService: await this.checkAIService(),
+      cache: await this.checkCacheService(),
     };
 
     // Determine overall status
@@ -127,6 +131,42 @@ export class HealthController {
       return {
         status: 'unhealthy',
         message: error instanceof Error ? error.message : 'AI Service unavailable',
+        timestamp: new Date(),
+      };
+    }
+  }
+
+  /**
+   * Check Cache Service health
+   */
+  private async checkCacheService(): Promise<ServiceHealth> {
+    try {
+      const stats = this.cacheService.getCacheStats();
+      
+      // Test cache connectivity
+      const testKey = 'health-check-test';
+      const testValue = { timestamp: Date.now() };
+      const setResult = await this.cacheService.set(testKey, testValue, 10);
+      const getResult = await this.cacheService.get(testKey);
+      await this.cacheService.delete(testKey);
+
+      const isWorking = setResult && getResult !== null;
+      
+      return {
+        status: stats.redisConnected ? 'healthy' : (isWorking ? 'degraded' : 'unhealthy'),
+        message: stats.redisConnected 
+          ? 'Cache service is operational with Redis'
+          : (isWorking ? 'Cache service running on memory fallback' : 'Cache service unavailable'),
+        timestamp: new Date(),
+        details: {
+          ...stats,
+          testPassed: isWorking,
+        },
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        message: error instanceof Error ? error.message : 'Cache service unavailable',
         timestamp: new Date(),
       };
     }

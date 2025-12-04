@@ -1,4 +1,6 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Cacheable, CacheTTL } from '../decorators/cache.decorators';
+import { CacheService } from './cache.service';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -81,7 +83,7 @@ export class AIClient {
   private readonly apiKey: string;
   private readonly logger = new Logger('AIClient');
 
-  constructor() {
+  constructor(private readonly cacheService: CacheService) {
     this.aiServiceUrl = process.env.AI_SERVICE_URL || 'http://ai-service:5000';
     this.apiKey = process.env.AI_SERVICE_API_KEY || '';
     if (!this.apiKey) {
@@ -166,6 +168,10 @@ export class AIClient {
   /**
    * Get AI-powered insights based on data
    */
+  @Cacheable({ 
+    key: (request) => `ai:insights:${request.insightType}:${JSON.stringify(request.data).substring(0, 50)}`, 
+    ttl: 900 
+  })
   async getInsights(request: InsightRequest): Promise<Insight[]> {
     try {
       this.logger.log(`Requesting ${request.insightType} insights`);
@@ -286,6 +292,10 @@ export class AIClient {
   /**
    * Generate summary from text or data
    */
+  @Cacheable({ 
+    key: (request) => `ai:summary:${request.type}:${JSON.stringify(request.content).substring(0, 50)}`, 
+    ttl: 1800 
+  })
   async generateSummary(request: {
     content: string | Record<string, unknown>;
     type: 'text' | 'data';
@@ -330,6 +340,10 @@ export class AIClient {
   /**
    * Predict trends based on historical data
    */
+  @Cacheable({ 
+    key: (request) => `ai:trends:${request.metricName}:${request.predictionHorizon}:${request.historicalData.length}`, 
+    ttl: 3600 
+  })
   async predictTrends(request: {
     metricName: string;
     historicalData: Array<{
@@ -385,6 +399,10 @@ export class AIClient {
   /**
    * Detect anomalies in data
    */
+  @Cacheable({ 
+    key: (request) => `ai:anomalies:${request.dataPoints.length}:${request.sensitivity || 'medium'}`, 
+    ttl: 600 
+  })
   async detectAnomalies(request: {
     dataPoints: Array<{
       timestamp: Date;

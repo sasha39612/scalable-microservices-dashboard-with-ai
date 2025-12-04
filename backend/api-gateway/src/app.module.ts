@@ -13,6 +13,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { AIModule } from './modules/ai/ai.module';
 import { SecurityModule } from './security/security.module';
 import { HealthController } from './health.controller';
+import { CacheController } from './controllers/cache.controller';
 import { WorkerClient } from './services/worker.client';
 import { AIClient } from './services/ai.client';
 import { User } from './modules/user/user.entity';
@@ -24,6 +25,9 @@ import { GqlThrottlerGuard } from './guards/gql-throttler.guard';
 import { rateLimitConfig } from './config/rate-limit.config';
 import { AuditLoggerInitializer } from './services/audit-logger-initializer';
 import { AuditInterceptor } from './interceptors/audit.interceptor';
+import { CacheService } from './services/cache.service';
+import { CacheInterceptor } from './interceptors/cache.interceptor';
+import { GraphQLCacheInterceptor } from './interceptors/graphql-cache.interceptor';
 
 @Module({
   imports: [
@@ -70,15 +74,26 @@ import { AuditInterceptor } from './interceptors/audit.interceptor';
     TasksModule,
     AIModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, CacheController],
   providers: [
     WorkerClient,
     AIClient,
     AuditLoggerInitializer,
+    CacheService,
     // Apply audit logging globally
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
+    },
+    // Apply caching globally for all methods
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
+    },
+    // Apply GraphQL-specific caching
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: GraphQLCacheInterceptor,
     },
     // Apply GraphQL-specific rate limiting
     {
