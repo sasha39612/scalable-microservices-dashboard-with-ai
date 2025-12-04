@@ -1,4 +1,6 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Cacheable, CacheInvalidate, CacheTTL } from '../decorators/cache.decorators';
+import { CacheService } from './cache.service';
 
 interface Task {
   id: string;
@@ -59,7 +61,7 @@ export class WorkerClient {
   private readonly apiKey: string;
   private readonly logger = new Logger('WorkerClient');
 
-  constructor() {
+  constructor(private readonly cacheService: CacheService) {
     this.workerServiceUrl = process.env.WORKER_SERVICE_URL || 'http://worker-service:4001';
     this.apiKey = process.env.WORKER_SERVICE_API_KEY || '';
     
@@ -82,6 +84,7 @@ export class WorkerClient {
   /**
    * Create a new task in the Worker Service
    */
+  @CacheInvalidate({ patterns: ['worker:tasks:*', 'worker:stats:*'] })
   async createTask(taskDto: CreateTaskDto): Promise<Task> {
     try {
       this.logger.log(`Creating task of type: ${taskDto.type}`);
@@ -118,6 +121,7 @@ export class WorkerClient {
   /**
    * Get task by ID
    */
+  @Cacheable({ key: 'worker:task:{{0}}', ttl: 60 })
   async getTask(taskId: string): Promise<Task> {
     try {
       this.logger.log(`Fetching task: ${taskId}`);
@@ -152,6 +156,10 @@ export class WorkerClient {
   /**
    * Get all tasks with optional filtering
    */
+  @Cacheable({ 
+    key: (filters) => `worker:tasks:${JSON.stringify(filters || {})}`, 
+    ttl: 30 
+  })
   async getTasks(filters?: {
     status?: string;
     type?: string;
@@ -195,6 +203,10 @@ export class WorkerClient {
   /**
    * Cancel a task
    */
+  @CacheInvalidate({ 
+    keys: ['worker:task:{{0}}'], 
+    patterns: ['worker:tasks:*'] 
+  })
   async cancelTask(taskId: string): Promise<void> {
     try {
       this.logger.log(`Cancelling task: ${taskId}`);
@@ -230,6 +242,10 @@ export class WorkerClient {
   /**
    * Retry a failed or cancelled task
    */
+  @CacheInvalidate({ 
+    keys: ['worker:task:{{0}}'], 
+    patterns: ['worker:tasks:*'] 
+  })
   async retryTask(taskId: string, resetAttempts?: boolean): Promise<Task> {
     try {
       this.logger.log(`Retrying task: ${taskId}`);

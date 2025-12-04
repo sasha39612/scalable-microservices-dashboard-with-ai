@@ -1,4 +1,5 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { CacheInvalidate } from '../../decorators/cache.decorators';
 import { TasksService } from './tasks.service';
 import { Task, Job, TasksResponse, CreateTaskInput, CreateJobInput, TaskFiltersInput } from './tasks.model';
 
@@ -7,6 +8,7 @@ export class TasksResolver {
   constructor(private readonly tasksService: TasksService) {}
 
   @Mutation(() => Task, { description: 'Create a new task in the Worker Service' })
+  @CacheInvalidate({ patterns: ['worker:tasks:*', 'gql:tasks:*'] })
   async createTask(
     @Args('input') input: CreateTaskInput,
   ): Promise<Task> {
@@ -28,6 +30,10 @@ export class TasksResolver {
   }
 
   @Mutation(() => Boolean, { description: 'Cancel a task' })
+  @CacheInvalidate({ 
+    keys: ['worker:task:{{0}}'], 
+    patterns: ['worker:tasks:*', 'gql:task:*', 'gql:tasks:*'] 
+  })
   async cancelTask(
     @Args('taskId') taskId: string,
   ): Promise<boolean> {
@@ -35,6 +41,10 @@ export class TasksResolver {
   }
 
   @Mutation(() => Task, { description: 'Retry a failed or cancelled task' })
+  @CacheInvalidate({ 
+    keys: ['worker:task:{{0}}'], 
+    patterns: ['worker:tasks:*', 'gql:task:*', 'gql:tasks:*'] 
+  })
   async retryTask(
     @Args('taskId') taskId: string,
     @Args('resetAttempts', { nullable: true }) resetAttempts?: boolean,
@@ -43,6 +53,7 @@ export class TasksResolver {
   }
 
   @Mutation(() => Job, { description: 'Create a new scheduled job' })
+  @CacheInvalidate({ patterns: ['worker:jobs:*', 'gql:job:*', 'gql:jobs:*'] })
   async createJob(
     @Args('input') input: CreateJobInput,
   ): Promise<Job> {
@@ -62,6 +73,10 @@ export class TasksResolver {
   }
 
   @Mutation(() => Boolean, { description: 'Pause a scheduled job' })
+  @CacheInvalidate({ 
+    keys: ['worker:job:{{0}}'], 
+    patterns: ['worker:jobs:*', 'gql:job:*', 'gql:jobs:*'] 
+  })
   async pauseJob(
     @Args('jobId') jobId: string,
   ): Promise<boolean> {
@@ -69,6 +84,10 @@ export class TasksResolver {
   }
 
   @Mutation(() => Boolean, { description: 'Resume a paused job' })
+  @CacheInvalidate({ 
+    keys: ['worker:job:{{0}}'], 
+    patterns: ['worker:jobs:*', 'gql:job:*', 'gql:jobs:*'] 
+  })
   async resumeJob(
     @Args('jobId') jobId: string,
   ): Promise<boolean> {

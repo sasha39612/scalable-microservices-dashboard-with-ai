@@ -1,4 +1,5 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { CacheInvalidate } from '../../decorators/cache.decorators';
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { CreateUserInput, UpdateUserInput } from 'common';
@@ -23,6 +24,7 @@ export class UserResolver {
   // Only admins can create users
   @Roles(UserRole.Admin)
   @Mutation(() => User)
+  @CacheInvalidate({ patterns: ['user:*', 'gql:user:*', 'gql:users:*'] })
   async createUser(@Args('input') input: CreateUserInput) {
     return this.userService.create(input);
   }
@@ -30,6 +32,10 @@ export class UserResolver {
   // Only admins can update users
   @Roles(UserRole.Admin)
   @Mutation(() => User, { nullable: true })
+  @CacheInvalidate({ 
+    keys: ['user:{{input.id}}'], 
+    patterns: ['user:*', 'gql:user:*', 'gql:users:*'] 
+  })
   async updateUser(@Args('input') input: UpdateUserInput) {
     return this.userService.update(input);
   }
