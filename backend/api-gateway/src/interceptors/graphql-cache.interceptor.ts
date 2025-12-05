@@ -11,19 +11,13 @@ import { tap, map } from 'rxjs/operators';
 import { CacheService } from '../services/cache.service';
 import { createHash } from 'crypto';
 
-interface CacheConfig {
-  ttl?: number;
-  key?: string;
-  condition?: (context: ExecutionContext) => boolean;
-}
-
 @Injectable()
 export class GraphQLCacheInterceptor implements NestInterceptor {
   private readonly logger = new Logger(GraphQLCacheInterceptor.name);
 
   constructor(private readonly cacheService: CacheService) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
     const gqlContext = GqlExecutionContext.create(context);
     const info = gqlContext.getInfo();
     const args = gqlContext.getArgs();
@@ -72,12 +66,14 @@ export class GraphQLCacheInterceptor implements NestInterceptor {
     );
   }
 
-  private generateCacheKey(info: any, args: any, request: any): string {
-    const queryName = info.fieldName;
-    const operation = info.operation.loc.source.body;
+  private generateCacheKey(info: unknown, args: unknown, request: unknown): string {
+    const infoObj = info as Record<string, unknown>;
+    const requestObj = request as Record<string, unknown>;
+    const queryName = infoObj.fieldName as string;
+    const operation = (infoObj.operation as Record<string, unknown>)?.loc?.source?.body as string;
     
     // Include user ID for user-specific queries
-    const userId = request.user?.id || 'anonymous';
+    const userId = (requestObj.user as Record<string, unknown>)?.id || 'anonymous';
     
     // Create a hash of the query and arguments for consistent key generation
     const queryHash = createHash('sha256')
@@ -106,9 +102,9 @@ export class GraphQLCacheInterceptor implements NestInterceptor {
     }
   }
 
-  private hasNoCacheDirective(info: any): boolean {
+  private hasNoCacheDirective(info: unknown): boolean {
     // Check if the query has a @noCache directive
-    const directives = info.fieldNodes[0]?.directives || [];
-    return directives.some((directive: any) => directive.name.value === 'noCache');
+    const directives = (info as Record<string, unknown>)?.fieldNodes?.[0]?.directives || [];
+    return directives.some((directive: Record<string, unknown>) => directive.name?.value === 'noCache');
   }
 }

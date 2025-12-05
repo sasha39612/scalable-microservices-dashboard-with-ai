@@ -12,7 +12,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
   private redisClient: Redis | null = null;
   private isConnected = false;
-  private memoryCache = new Map<string, CacheItem<any>>();
+  private memoryCache = new Map<string, CacheItem<unknown>>();
   
   // Default TTL values (in seconds)
   private readonly DEFAULT_TTL = 300; // 5 minutes

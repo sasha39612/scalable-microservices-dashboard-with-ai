@@ -1,4 +1,4 @@
-import { Controller, Get, Delete, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Delete, Post, Body, Param } from '@nestjs/common';
 import { CacheService } from '../services/cache.service';
 import { Roles } from '../modules/auth/decorators/roles.decorator';
 import { UserRole } from 'common';
@@ -13,7 +13,7 @@ interface CacheOperation {
   key?: string;
   pattern?: string;
   ttl?: number;
-  value?: any;
+  value?: unknown;
 }
 
 @Controller('cache')
@@ -134,11 +134,7 @@ export class CacheController {
    */
   @Roles(UserRole.Admin)
   @Post('warmup')
-  async warmupCache(@Body() options?: { 
-    includeUsers?: boolean; 
-    includeTasks?: boolean; 
-    includeJobs?: boolean; 
-  }) {
+  async warmupCache() {
     const warmedKeys: string[] = [];
     
     try {

@@ -27,18 +27,18 @@ export class CacheInterceptor implements NestInterceptor {
     private readonly reflector: Reflector,
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
     const handler = context.getHandler();
     const className = context.getClass().name;
     const methodName = handler.name;
 
     // Get cache metadata
-    const keyTemplate = this.reflector.get<string | Function>(CACHE_KEY_METADATA, handler);
+    const keyTemplate = this.reflector.get<string | ((...args: unknown[]) => string)>(CACHE_KEY_METADATA, handler);
     const ttl = this.reflector.get<number>(CACHE_TTL_METADATA, handler);
-    const condition = this.reflector.get<Function>(CACHE_CONDITION_METADATA, handler);
+    const condition = this.reflector.get<(...args: unknown[]) => boolean>(CACHE_CONDITION_METADATA, handler);
     const invalidateConfig = this.reflector.get<InvalidateOptions>(CACHE_INVALIDATE_METADATA, handler);
 
-    const args = context.getArgs();
+    const args = context.getArgs() as unknown[];
 
     // Handle cache invalidation
     if (invalidateConfig) {
@@ -81,10 +81,10 @@ export class CacheInterceptor implements NestInterceptor {
   }
 
   private generateCacheKey(
-    keyTemplate: string | Function | undefined,
+    keyTemplate: string | ((...args: unknown[]) => string) | undefined,
     className: string,
     methodName: string,
-    args: any[],
+    args: unknown[],
   ): string {
     if (keyTemplate) {
       if (typeof keyTemplate === 'function') {
@@ -99,8 +99,8 @@ export class CacheInterceptor implements NestInterceptor {
 
   private async handleCacheInvalidation(
     config: InvalidateOptions,
-    args: any[],
-    result: any,
+    args: unknown[],
+    result: unknown,
   ): Promise<void> {
     try {
       // Check invalidation condition
