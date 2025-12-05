@@ -8,15 +8,15 @@ export const CACHE_INVALIDATE_METADATA = 'cache:invalidate';
 
 // Cache configuration interface
 export interface CacheOptions {
-  key?: string | ((...args: any[]) => string);
+  key?: string | ((...args: unknown[]) => string);
   ttl?: number;
-  condition?: (...args: any[]) => boolean;
+  condition?: (...args: unknown[]) => boolean;
 }
 
 export interface InvalidateOptions {
   keys?: string[];
   patterns?: string[];
-  condition?: (...args: any[]) => boolean;
+  condition?: (...args: unknown[]) => boolean;
 }
 
 /**
@@ -41,7 +41,7 @@ export interface InvalidateOptions {
  * ```
  */
 export function Cacheable(options: CacheOptions = {}): MethodDecorator {
-  return (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
+  return (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
     SetMetadata(CACHE_KEY_METADATA, options.key)(target, propertyKey, descriptor);
     SetMetadata(CACHE_TTL_METADATA, options.ttl)(target, propertyKey, descriptor);
     SetMetadata(CACHE_CONDITION_METADATA, options.condition)(target, propertyKey, descriptor);
@@ -73,7 +73,7 @@ export function Cacheable(options: CacheOptions = {}): MethodDecorator {
  * ```
  */
 export function CacheInvalidate(options: InvalidateOptions): MethodDecorator {
-  return (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
+  return (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
     SetMetadata(CACHE_INVALIDATE_METADATA, options)(target, propertyKey, descriptor);
   };
 }
@@ -98,8 +98,8 @@ export function CacheInvalidate(options: InvalidateOptions): MethodDecorator {
  * }
  * ```
  */
-export function CacheKey(keyTemplate: string | ((...args: any[]) => string)): MethodDecorator {
-  return (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
+export function CacheKey(keyTemplate: string | ((...args: unknown[]) => string)): MethodDecorator {
+  return (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
     SetMetadata(CACHE_KEY_METADATA, keyTemplate)(target, propertyKey, descriptor);
   };
 }
@@ -118,7 +118,7 @@ export function CacheKey(keyTemplate: string | ((...args: any[]) => string)): Me
  * ```
  */
 export function CacheTTL(ttl: number): MethodDecorator {
-  return (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
+  return (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
     SetMetadata(CACHE_TTL_METADATA, ttl)(target, propertyKey, descriptor);
   };
 }
@@ -135,7 +135,7 @@ export function CacheTTL(ttl: number): MethodDecorator {
  * ```
  */
 export function NoCache(): MethodDecorator {
-  return (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
+  return (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
     SetMetadata(CACHE_CONDITION_METADATA, () => false)(target, propertyKey, descriptor);
   };
 }
@@ -143,6 +143,8 @@ export function NoCache(): MethodDecorator {
 /**
  * Utility functions for cache key generation
  */
+import { createHash } from 'crypto';
+
 export class CacheKeyUtils {
   /**
    * Generate cache key from template and arguments
@@ -153,8 +155,8 @@ export class CacheKeyUtils {
    * @returns Generated cache key
    */
   static generateKey(
-    template: string | ((...args: any[]) => string),
-    args: any[],
+    template: string | ((...args: unknown[]) => string),
+    args: unknown[],
     paramNames: string[] = []
   ): string {
     if (typeof template === 'function') {
@@ -192,10 +194,9 @@ export class CacheKeyUtils {
    * @param args Arguments
    * @returns Generated cache key
    */
-  static generateDefaultKey(className: string, methodName: string, args: any[]): string {
+  static generateDefaultKey(className: string, methodName: string, args: unknown[]): string {
     const argsHash = args.length > 0 ? JSON.stringify(args) : 'no-args';
-    const hash = require('crypto')
-      .createHash('md5')
+    const hash = createHash('md5')
       .update(argsHash)
       .digest('hex')
       .substring(0, 8);
