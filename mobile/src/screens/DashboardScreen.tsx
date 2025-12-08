@@ -71,7 +71,7 @@ const DashboardScreen: React.FC = () => {
               color={stat.color}
               onPress={() => {
                 // Handle KPI card press - navigate to detailed view
-                console.log(`Pressed ${stat.title}`);
+                // TODO: Implement navigation to detailed stat view
               }}
             />
           ))}

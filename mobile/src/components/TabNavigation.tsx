@@ -9,14 +9,15 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 interface TabNavigationProps {
-  activeTab: 'home' | 'dashboard' | 'profile';
-  onTabPress: (tab: 'home' | 'dashboard' | 'profile') => void;
+  activeTab: 'home' | 'dashboard' | 'chat' | 'profile';
+  onTabPress: (tab: 'home' | 'dashboard' | 'chat' | 'profile') => void;
 }
 
 const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabPress }) => {
   const tabs = [
     { key: 'home', label: 'Home', icon: 'home' },
     { key: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { key: 'chat', label: 'AI Chat', icon: 'chat' },
     { key: 'profile', label: 'Profile', icon: 'person' },
   ] as const;
 
