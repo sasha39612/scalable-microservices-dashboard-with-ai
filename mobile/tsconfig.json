@@ -16,11 +16,13 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "typeRoots": ["./types", "./node_modules/@types"]
   },
   "include": [
     "src/**/*",
-    "App.tsx"
+    "App.tsx",
+    "types/**/*"
   ],
   "exclude": [
     "node_modules",

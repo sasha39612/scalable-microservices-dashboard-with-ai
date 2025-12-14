@@ -1,10 +1,9 @@
 'use client';
 
-import React from 'react';
 import { FiActivity } from 'react-icons/fi';
 import StatsCard from '@/components/widgets/StatsCard';
-import useDashboardStats from '@/hooks/useDashboardStats';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import useDashboardStats from '@/hooks/useDashboardStats';
 
 const DashboardPage = () => {
   const { stats, loading, error } = useDashboardStats();
