@@ -28,8 +28,8 @@ if [ "$USER_ID" != "null" ] && [ -n "$USER_ID" ]; then
   # Verify in database
   echo ""
   echo "2. Verifying user exists in PostgreSQL database..."
-  PGPASSWORD=REDACTED ssh dev@138.199.175.38 \
-    "PGPASSWORD=REDACTED psql -h 138.199.175.38 -U dashboard_user -d microservices_dashboard -c 'SELECT id, email, name, \"createdAt\" FROM users;'"
+  PGPASSWORD=<REDACTED> ssh dev@138.199.175.38 \
+    "PGPASSWORD=<REDACTED> psql -h 138.199.175.38 -U dashboard_user -d microservices_dashboard -c 'SELECT id, email, name, \"createdAt\" FROM users;'"
   
   echo ""
   echo "✅ Database integration test completed!"

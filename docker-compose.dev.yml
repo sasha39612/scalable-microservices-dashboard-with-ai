@@ -64,7 +64,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=4000
-      - DATABASE_URL=postgresql://dashboard_user:REDACTED@138.199.175.38:5432/microservices_dashboard
+      - DATABASE_URL=${DATABASE_URL:-postgresql://dashboard_user:changeme@localhost:5432/microservices_dashboard}
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-dev-jwt-access-secret-change-in-production}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-jwt-refresh-secret-change-in-production}
       - WORKER_SERVICE_URL=http://worker-service:4001

@@ -12,7 +12,7 @@
 
 ```bash
 # Connection String (in .env)
-DATABASE_URL=postgresql://dashboard_user:REDACTED@138.199.175.38:5432/microservices_dashboard
+DATABASE_URL=postgresql://dashboard_user:<REDACTED>@138.199.175.38:5432/microservices_dashboard
 
 # Test Connection
 npx ts-node --project backend/common/tsconfig.json backend/common/tests/db/test-connection.ts
@@ -103,7 +103,7 @@ npx ts-node --project backend/common/tsconfig.json backend/common/tests/db/test-
 
 ### Direct Database Access
 ```bash
-psql "postgresql://dashboard_user:REDACTED@138.199.175.38:5432/microservices_dashboard"
+psql "postgresql://dashboard_user:<REDACTED>@138.199.175.38:5432/microservices_dashboard"
 ```
 
 ---

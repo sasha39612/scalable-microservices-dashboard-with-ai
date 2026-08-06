@@ -98,7 +98,7 @@ TypeOrmModule.forRoot({
 })
 ```
 
-**Connection String**: `postgresql://dashboard_user:REDACTED@138.199.175.38:5432/microservices_dashboard`
+**Connection String**: `postgresql://dashboard_user:<REDACTED>@138.199.175.38:5432/microservices_dashboard`
 
 ## Key Features
 

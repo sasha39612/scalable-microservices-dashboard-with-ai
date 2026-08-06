@@ -10,7 +10,7 @@ docker compose -f docker-compose.dev.yml up -d --build api-gateway
 ### 2. Verify Database Tables
 ```bash
 ssh dev@138.199.175.38
-PGPASSWORD=REDACTED psql -h 138.199.175.38 -U dashboard_user -d microservices_dashboard -c '\dt'
+PGPASSWORD=<REDACTED> psql -h 138.199.175.38 -U dashboard_user -d microservices_dashboard -c '\dt'
 ```
 
 Expected tables:
@@ -228,7 +228,7 @@ getHistoricalTrends(days?: number): Promise<HistoricalTrends>
 ### Connection Issues
 ```bash
 # Check database is accessible
-ssh dev@138.199.175.38 "PGPASSWORD=REDACTED psql -h 138.199.175.38 -U dashboard_user -d microservices_dashboard -c 'SELECT 1'"
+ssh dev@138.199.175.38 "PGPASSWORD=<REDACTED> psql -h 138.199.175.38 -U dashboard_user -d microservices_dashboard -c 'SELECT 1'"
 ```
 
 ### View API Gateway Logs
@@ -258,7 +258,7 @@ Then restart the API Gateway to recreate tables.
 
 ### Environment Variables
 ```env
-DATABASE_URL=postgresql://dashboard_user:REDACTED@138.199.175.38:5432/microservices_dashboard
+DATABASE_URL=postgresql://dashboard_user:<REDACTED>@138.199.175.38:5432/microservices_dashboard
 NODE_ENV=development
 PORT=4000
 ```

@@ -318,7 +318,7 @@ Return to frontend
 4. **Verify Tables Created**
    ```bash
    ssh dev@138.199.175.38
-   PGPASSWORD=REDACTED \
+   PGPASSWORD=<REDACTED> \
      psql -h 138.199.175.38 -U dashboard_user -d microservices_dashboard \
      -c "SELECT tablename FROM pg_tables WHERE schemaname='public';"
    ```
