@@ -1,8 +1,8 @@
-# Inter-Service Authentication Implementation
+# Inter-Service Authentication
 
 ## Overview
 
-This document describes the API key-based authentication system implemented for securing communication between microservices in the Scalable Microservices Dashboard.
+API key-based authentication secures communication between microservices in the Scalable Microservices Dashboard: the API Gateway authenticates itself to the Worker Service and AI Service using a shared secret sent via the `X-API-Key` header.
 
 ## Architecture
 
@@ -12,9 +12,23 @@ This document describes the API key-based authentication system implemented for 
 
 ### Communication Flow
 ```
-API Gateway (authenticated users) 
+API Gateway (authenticated users)
     ↓ [includes X-API-Key header]
 Worker Service / AI Service (validates API key)
+```
+
+### Security Layers
+
+```
+User Request
+    ↓
+[JWT Authentication] - API Gateway validates user identity
+    ↓
+[RBAC] - API Gateway validates user permissions
+    ↓
+[API Key Authentication] - Services validate caller identity
+    ↓
+Service Processing
 ```
 
 ## Implementation Details
@@ -22,17 +36,19 @@ Worker Service / AI Service (validates API key)
 ### 1. API Key Guards
 
 Each service has an `ApiKeyGuard` that:
-- Validates the `X-API-Key` header in incoming requests
-- Compares against the service's configured API key from environment variables
-- Returns 401 Unauthorized if key is missing or invalid
-- Supports `@Public()` decorator for endpoints that should bypass authentication (e.g., health checks)
+- Validates the `X-API-Key` header on incoming requests
+- Compares it against the service's configured API key from environment variables
+- Returns 401 Unauthorized if the key is missing or invalid
+- Supports a `@Public()` decorator for endpoints that should bypass authentication (e.g., health checks)
 
 **Files:**
-- `backend/worker-service/src/guards/api-key.guard.ts`
-- `backend/ai-service/src/guards/api-key.guard.ts`
+- `backend/worker-service/src/guards/api-key.guard.ts` — validates against `WORKER_SERVICE_API_KEY`
+- `backend/ai-service/src/guards/api-key.guard.ts` — validates against `AI_SERVICE_API_KEY`
+- `backend/worker-service/src/decorators/public.decorator.ts`
+- `backend/ai-service/src/decorators/public.decorator.ts`
 
 **Guard Registration:**
-Both guards are registered globally via `APP_GUARD` in their respective modules:
+Both guards are registered globally via `APP_GUARD` in their respective modules (`worker.module.ts`, `ai.module.ts`):
 ```typescript
 {
   provide: APP_GUARD,
@@ -40,42 +56,25 @@ Both guards are registered globally via `APP_GUARD` in their respective modules:
 }
 ```
 
-### 2. Service Clients
+### 2. Service Clients (API Gateway)
 
-The API Gateway has client classes that automatically include API keys in all requests:
+The API Gateway has client classes that automatically include the API key in every outgoing request via a shared `getHeaders()` helper. Health check calls remain unauthenticated.
 
 #### WorkerClient
 - Location: `backend/api-gateway/src/services/worker.client.ts`
 - Reads `WORKER_SERVICE_API_KEY` from environment
-- Uses `getHeaders()` helper to include `X-API-Key` in all fetch requests
-- Health check endpoint remains public
+- `getHeaders()` adds `X-API-Key` to all fetch calls
+- Updated endpoints (12): `createTask`, `getTask`, `getTasks`, `updateTask`, `cancelTask`, `retryTask`, `createJob`, `getJobs`, `getJob`, `pauseJob`, `resumeJob`, `deleteJob`
+- Health check remains public (no API key)
 
 #### AIClient
 - Location: `backend/api-gateway/src/services/ai.client.ts`
 - Reads `AI_SERVICE_API_KEY` from environment
-- Uses `getHeaders()` helper to include `X-API-Key` in all fetch requests
-- Health check endpoint remains public
+- `getHeaders()` adds `X-API-Key` to all fetch calls
+- Updated endpoints (9): `chat`, `getInsights`, `analyzeData`, `getRecommendations`, `generateSummary`, `predictTrends`, `detectAnomalies`, `getConversationHistory`
+- Health check remains public (no API key)
 
-### 3. Environment Configuration
-
-Required environment variables:
-
-```env
-# Worker Service API Key
-WORKER_SERVICE_API_KEY=your-secure-worker-service-key-here
-
-# AI Service API Key
-AI_SERVICE_API_KEY=your-secure-ai-service-key-here
-```
-
-**Important:** Generate strong, unique keys for each service. Use a secure random string generator.
-
-Example generation (using openssl):
-```bash
-openssl rand -base64 32
-```
-
-### 4. Public Endpoints
+### 3. Public Endpoints
 
 Both services have health check endpoints that remain public:
 - Worker Service: `GET /health`
@@ -83,45 +82,24 @@ Both services have health check endpoints that remain public:
 
 These are marked with the `@Public()` decorator to bypass API key validation.
 
-## Security Features
+## Environment Configuration
 
-### ✅ Authentication
-- All inter-service requests require valid API keys
-- API keys are transmitted via HTTP headers (not in URLs)
-- Keys are validated before request processing
+Required environment variables (`.env.example`):
 
-### ✅ Isolation
-- Each service has its own unique API key
-- Keys are stored in environment variables (not in code)
-- Keys can be rotated independently
-
-### ✅ Error Handling
-- Invalid/missing keys return 401 Unauthorized
-- Clear error messages for debugging
-- Logs authentication failures
-
-## Setup Instructions
-
-### 1. Generate API Keys
-
-Generate two secure random strings:
-```bash
-# For Worker Service
-openssl rand -base64 32
-
-# For AI Service
-openssl rand -base64 32
-```
-
-### 2. Configure Environment
-
-Add to your `.env` file:
 ```env
-WORKER_SERVICE_API_KEY=<generated-worker-key>
-AI_SERVICE_API_KEY=<generated-ai-key>
+# Inter-service authentication: Generate a secure random key
+WORKER_SERVICE_API_KEY=worker-secret-key-change-in-production
+AI_SERVICE_API_KEY=ai-secret-key-change-in-production
 ```
 
-### 3. Update Docker Compose
+Generate secure keys with:
+```bash
+openssl rand -base64 32
+```
+
+**Important:** Use a unique, strong key per service. Never reuse the AI Service key for the Worker Service or vice versa.
+
+### Docker Compose
 
 Ensure environment variables are passed to services in `docker-compose.dev.yml`:
 
@@ -140,34 +118,46 @@ ai-service:
     - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY}
 ```
 
-### 4. Restart Services
+## Setup Instructions
 
-```bash
-docker-compose -f docker-compose.dev.yml down
-docker-compose -f docker-compose.dev.yml up -d
-```
+1. **Generate API keys:**
+   ```bash
+   openssl rand -base64 32  # For Worker Service
+   openssl rand -base64 32  # For AI Service
+   ```
+
+2. **Update `.env`:**
+   ```env
+   WORKER_SERVICE_API_KEY=<generated-key-1>
+   AI_SERVICE_API_KEY=<generated-key-2>
+   ```
+
+3. **Restart services:**
+   ```bash
+   docker-compose -f docker-compose.dev.yml down
+   docker-compose -f docker-compose.dev.yml up -d
+   ```
+
+4. **Test:**
+   ```bash
+   ./scripts/test-inter-service-auth.sh
+   ```
 
 ## Testing
 
-Run the inter-service authentication test script:
-
-```bash
-./scripts/test-inter-service-auth.sh
-```
-
-This script tests:
-1. ✅ Worker Service rejects requests without API key
-2. ✅ Worker Service rejects requests with invalid API key
-3. ✅ Worker Service accepts requests with valid API key
-4. ✅ Worker Service health endpoint is public
-5. ✅ AI Service rejects requests without API key
-6. ✅ AI Service rejects requests with invalid API key
-7. ✅ AI Service accepts requests with valid API key
-8. ✅ AI Service health endpoint is public
+The automated test script (`scripts/test-inter-service-auth.sh`) checks:
+1. Worker Service rejects requests without API key (401)
+2. Worker Service rejects invalid API key (401)
+3. Worker Service accepts valid API key (200/201)
+4. Worker Service health endpoint is public (200)
+5. AI Service rejects requests without API key (401)
+6. AI Service rejects invalid API key (401)
+7. AI Service accepts valid API key (200)
+8. AI Service health endpoint is public (200)
 
 ### Manual Testing
 
-**Test without API key (should fail):**
+**Without API key (should fail):**
 ```bash
 curl -X POST http://localhost:4001/api/tasks \
   -H "Content-Type: application/json" \
@@ -175,7 +165,7 @@ curl -X POST http://localhost:4001/api/tasks \
 # Expected: 401 Unauthorized
 ```
 
-**Test with valid API key (should succeed):**
+**With valid API key (should succeed):**
 ```bash
 curl -X POST http://localhost:4001/api/tasks \
   -H "Content-Type: application/json" \
@@ -184,105 +174,73 @@ curl -X POST http://localhost:4001/api/tasks \
 # Expected: 200/201 with task data
 ```
 
-**Test public endpoint (should succeed):**
+**Public endpoint (should succeed without a key):**
 ```bash
 curl http://localhost:4001/health
 # Expected: 200 with health status
 ```
 
-## Integration with Existing Security
-
-This inter-service authentication works alongside:
-
-1. **JWT Authentication** - API Gateway validates user JWTs for incoming GraphQL requests
-2. **Role-Based Authorization** - Users must have appropriate roles to access certain operations
-3. **API Key Authentication** - Services validate API keys for inter-service communication
-
-### Security Layers
-
-```
-User Request
-    ↓
-[JWT Authentication] - API Gateway validates user identity
-    ↓
-[RBAC] - API Gateway validates user permissions
-    ↓
-[API Key Authentication] - Services validate caller identity
-    ↓
-Service Processing
-```
-
 ## Troubleshooting
 
-### Issue: 401 Unauthorized from Worker/AI Service
+### 401 Unauthorized from Worker/AI Service
+**Possible causes:** API key not set, key mismatch between gateway and service, header not sent correctly.
+**Fix:** Check `.env` has both keys defined, verify services read the correct environment variables, check logs for validation errors.
 
-**Possible Causes:**
-1. API key not set in environment variables
-2. API key mismatch between gateway and service
-3. Header not being sent correctly
-
-**Solution:**
-1. Check `.env` file has both keys defined
-2. Verify services are reading correct environment variables
-3. Check logs for API key validation errors
-
-### Issue: Services not starting
-
-**Possible Causes:**
-1. Missing environment variables
-2. Invalid API key format
-
-**Solution:**
-1. Check `WORKER_SERVICE_API_KEY` and `AI_SERVICE_API_KEY` are set
-2. Ensure keys don't contain special characters that need escaping
+### Services not starting
+**Possible causes:** Missing environment variables, invalid API key format.
+**Fix:** Ensure `WORKER_SERVICE_API_KEY` and `AI_SERVICE_API_KEY` are set and free of characters that need shell escaping.
 
 ## Best Practices
 
-### ✅ DO:
+### DO
 - Generate long, random API keys (at least 32 bytes)
 - Store keys in environment variables
-- Use different keys for each service
+- Use a different key per service
 - Rotate keys periodically
 - Log authentication failures
 - Keep health endpoints public
 
-### ❌ DON'T:
+### DON'T
 - Hardcode API keys in source code
 - Share API keys between services
-- Store keys in version control
+- Commit keys to version control
 - Use predictable or simple keys
 - Expose keys in URLs or logs
 
-## Migration Notes
-
-If upgrading from an unprotected setup:
-
-1. Services will start rejecting unauthenticated requests
-2. Ensure all clients include `X-API-Key` header
-3. Test with the provided script before production deployment
-4. Update any external services that call Worker/AI services
-
 ## Key Rotation
-
-To rotate API keys:
 
 1. Generate new keys:
    ```bash
    openssl rand -base64 32
    ```
-
-2. Update `.env` with new keys
-
+2. Update `.env` with the new keys.
 3. Restart services:
    ```bash
    docker-compose -f docker-compose.dev.yml restart
    ```
+4. Verify with the test script.
 
-4. Verify with test script
+## Migration Notes
+
+If upgrading from an unprotected setup:
+1. Services will start rejecting unauthenticated requests.
+2. Ensure all clients include the `X-API-Key` header.
+3. Test with the provided script before production deployment.
+4. Update any external services that call the Worker/AI services.
+
+## Production Hardening (Future Enhancements)
+
+- **Mutual TLS (mTLS)** - Replace API keys with certificate-based authentication
+- **Service Mesh** - Consider Istio/Linkerd for advanced service-to-service security
+- **Automated Key Rotation** - Scheduled rotation instead of manual
+- **Monitoring** - Alerts for authentication failures
+- **Rate Limiting** - Per-service rate limits
+- **Request Signing** - HMAC signatures on requests
+- **Payload Encryption** - Encrypt sensitive payloads
+- **Audit Logging** - Log all inter-service calls
+- **Circuit Breakers** - Resilience patterns for service-to-service calls
 
 ## Related Documentation
 
-- [Global Authentication Implementation](../AI_GATEWAY_INTEGRATION_COMPLETE.md)
-- [Role-Based Authorization](../DATABASE_INTEGRATION_COMPLETE.md)
-- [Health Checks](../HEALTH_CHECKS_COMPLETE.md)
-- [Environment Setup](./.env.example)
+- [Worker Integration](./WORKER_INTEGRATION.md)
+- [Environment Setup](../.env.example)
