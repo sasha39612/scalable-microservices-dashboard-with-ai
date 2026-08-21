@@ -1,133 +1,127 @@
 # Scalable Microservices Dashboard with AI 🚀🤖
 
-Full-stack microservices application that aggregates multiple APIs, processes background tasks, caches results, and provides a real-time dashboard for web (and optional mobile). Includes AI-powered insights and chat assistant for predictive analytics and data summarization.
+A full-stack TypeScript application demonstrating a microservices architecture for aggregating external APIs, processing background jobs, caching data, and providing an interactive analytics dashboard with AI-powered features.
 
-## ✅ Key Features
+## ✨ Overview
+
+The project is built around a NestJS backend, a Next.js frontend, PostgreSQL persistence, Redis caching, background processing, and a dedicated AI service.
+
+The main goal is to demonstrate practical full-stack engineering patterns such as service separation, API design, asynchronous processing, caching, authentication, rate limiting, testing, and containerized development.
+
+## 🏗️ Architecture
+
+```text
+                         ┌──────────────────────┐
+                         │      Next.js         │
+                         │   React Dashboard    │
+                         └──────────┬───────────┘
+                                    │
+                              GraphQL / REST
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │     API Gateway      │
+                         │        NestJS        │
+                         └───────┬───────┬──────┘
+                                 │       │
+                    ┌────────────┘       └─────────────┐
+                    ▼                                  ▼
+          ┌──────────────────┐               ┌──────────────────┐
+          │  Worker Service  │               │   AI Service     │
+          │      NestJS      │               │      NestJS      │
+          └────────┬─────────┘               └────────┬─────────┘
+                   │                                  │
+                   ▼                                  ▼
+             ┌───────────┐                      ┌───────────┐
+             │   Redis   │                      │  OpenAI   │
+             │   Cache   │                      │    API    │
+             └───────────┘                      └───────────┘
+
+                         ┌──────────────────────┐
+                         │     PostgreSQL       │
+                         │      Database        │
+                         └──────────────────────┘
+```
+
+## 🚀 Key Features
+
 ### Backend
 
-* NestJS microservices architecture (API Gateway + worker services + AI microservice)
-* GraphQL + REST API endpoints for aggregated data
-* Background job processing using BullMQ / RabbitMQ
-* Redis caching for API responses, job statuses, and AI results
-* PostgreSQL database with TypeORM / Prisma
-* OAuth2 authentication and secure API access
-* **Rate limiting** to prevent abuse and ensure fair usage
+- NestJS microservices architecture
+- API Gateway with GraphQL and REST APIs
+- Background job processing with a custom in-memory task queue
+- Redis-based caching
+- PostgreSQL persistence
+- OAuth2 authentication
+- API rate limiting
+- Health checks and service monitoring
+- Asynchronous processing for long-running operations
 
-### AI Microservice:
+### AI Service
 
-* OpenAI API for summarization, insights, and predictive analytics
-* LangChain integration for chat assistant querying dashboard data
-* Optional ML models for anomaly detection or trend prediction
+- Dedicated AI microservice
+- OpenAI API integration
+- AI-powered data summarization
+- Context-aware chat assistant
+- Data insights and recommendations
+- Response caching
+- Asynchronous AI processing
 
 ### Frontend
 
-* Next.js 15 + React 19 dashboard
-* Dynamic charts with Recharts / Chart.js
-* Modular components and modern React hooks (useEffect, useReducer, useRef)
-* Production-ready optimizations (Turbo compiler, code splitting, SSR / SSG)
-* AI Chat / Insights panel to interact with AI service
-* DevOps / Deployment
-* Dockerized backend, AI service, and frontend
-* CI/CD pipeline with GitHub Actions (lint, test, build, deploy)
-* Deployment: backend & AI microservice on Railway / AWS, frontend on Vercel
+- Next.js 15
+- React 19
+- TypeScript
+- Interactive analytics dashboard
+- Dynamic data visualizations
+- AI chat and insights interface
+- Modular component architecture
+
+### Infrastructure
+
+- Docker and Docker Compose
+- GitHub Actions
+- Containerized development environment
+- Kubernetes configuration
+- Service health checks
+- Environment-based configuration
 
 ### Testing
 
-* Jest unit & integration tests for backend services, AI microservice, and resolvers
-* React Testing Library for frontend components including AI chat
-* Coverage reports with badges
-* Optional Mobile
-* React Native / Expo app synced with backend APIs
-* Real-time updates and AI insights
-
-## 💡 Portfolio Highlights
-
-* Built scalable microservices architecture with caching, queues, and AI microservice.
-* Implemented AI-powered insights, summarization, and predictive analytics using OpenAI API.
-* Developed AI chat assistant to query aggregated API data intelligently.
-* Delivered production-ready web dashboard and optional mobile app.
-* CI/CD pipeline and Docker deployment ensured enterprise-grade reliability.
-
-## 📁 Project Structure
-```bash
-microservices-dashboard/
-├── backend/                     
-│   ├── api-gateway/             
-│   │   ├── src/
-│   │   │   ├── modules/
-│   │   │   ├── resolvers/       
-│   │   │   └── main.ts
-│   │   └── Dockerfile
-│   ├── worker-service/          
-│   │   ├── src/
-│   │   │   ├── jobs/
-│   │   │   ├── services/
-│   │   │   └── main.ts
-│   │   └── Dockerfile
-│   ├── ai-service/               # New AI microservice
-│   │   ├── src/
-│   │   │   ├── modules/
-│   │   │   ├── services/         # OpenAI / LangChain / ML logic
-│   │   │   └── main.ts
-│   │   └── Dockerfile
-│   ├── common/                  
-│   └── docker-compose.yml        # Includes AI service
-├── frontend/                     
-│   ├── src/
-│   │   ├── components/
-│   │   │   └── AIChat/           # React component for AI chat & insights
-│   │   ├── hooks/
-│   │   ├── pages/
-│   │   └── utils/
-│   ├── tests/
-│   │   ├── components/
-│   │   └── pages/
-│   └── Dockerfile
-├── mobile/ (optional)            
-│   ├── src/
-│   │   ├── components/
-│   │   └── screens/
-│   └── app.json
-├── scripts/                      
-├── README.md
-└── package.json
-```
-
-## 🛠 Tech Stack
-
-* **Backend:** NestJS, GraphQL, REST API, PostgreSQL, Redis, BullMQ / RabbitMQ, OpenAI API, LangChain
-* **Frontend:** Next.js 15, React 19, TypeScript, Recharts / Chart.js, SSR / SSG
-* **Mobile:** (Optional): React Native / Expo
-* **DevOps:** Docker, Docker Compose, GitHub Actions CI/CD, Vercel, Railway / AWS
-* **Testing:** Jest, React Testing Library
+- Jest unit tests
+- Backend integration tests
+- GraphQL resolver tests
+- React Testing Library
+- Frontend component tests
+- Automated test execution through CI
 
 ## 🤖 AI Service Integration
 
-The AI Service is fully integrated with the API Gateway, providing powerful AI capabilities through both GraphQL and REST APIs:
+The AI service is integrated with the API Gateway and provides AI functionality through the application API.
 
-**Features:**
-- 💬 **AI Chat Assistant:** Multi-turn conversations with context awareness
-- 📊 **Data Insights:** AI-powered analytics and recommendations
-- 🔍 **Data Analysis:** Trend detection, anomaly detection, and predictions
-- 📝 **Summarization:** Intelligent text and data summarization
-- ⚡ **Performance:** Response caching and async processing for large datasets
+**AI capabilities:**
 
-**Access Methods:**
-1. **GraphQL API** (via API Gateway): `http://localhost:4000/graphql`
-2. **REST API** (direct): `http://localhost:5000/ai/*`
+- 💬 **AI Chat Assistant** — multi-turn conversations with contextual messages
+- 📊 **Data Insights** — AI-generated analysis and recommendations
+- 📝 **Summarization** — summaries of application data
+- ⚡ **Caching** — avoids unnecessary repeated AI requests
+- 🔄 **Async Processing** — supports background processing for longer operations
 
-**Quick Test:**
+**API access:**
+
+- GraphQL: `http://localhost:4000/graphql`
+- AI REST endpoints: `http://localhost:5000/ai/*`
+
+**Example request:**
+
 ```bash
-# Test AI integration
-./scripts/test-ai-gateway-integration.sh
-
-# Or manually test
 curl -X POST http://localhost:5000/ai/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "Analyze my system performance"}'
+  -d '{"message":"Analyze my system performance"}'
 ```
 
-**GraphQL Example:**
+**GraphQL example:**
+
 ```graphql
 mutation {
   chat(input: {
@@ -142,87 +136,215 @@ mutation {
 ```
 
 📖 **Documentation:**
-- [AI Gateway Integration Guide](docs/AI_GATEWAY_INTEGRATION.md)
-- [Quick Reference](docs/AI_GATEWAY_QUICK_REF.md)
+
+- [AI Integration Guide](docs/AI_INTEGRATION.md)
 - [AI Service API](backend/ai-service/API_DOCUMENTATION.md)
-- [Integration Summary](AI_INTEGRATION_SUMMARY.md)
 
 ## 🏥 Health Checks
 
-Comprehensive health monitoring is implemented across all services:
+Each major backend service exposes health endpoints for monitoring service availability.
 
-* **API Gateway:** `/health` (basic) and `/health/detailed` (with all service statuses)
-* **Worker Service:** `/health` (includes queue statistics)
-* **AI Service:** `/health` (includes available models)
+- **API Gateway:** `/health`, `/health/detailed`
+- **Worker Service:** `/health` — includes queue-related status information
+- **AI Service:** `/health` — provides AI service availability information
 
-Health checks are integrated with:
-- Kubernetes readiness and liveness probes
-- Docker Compose service dependencies
-- Monitoring systems (Prometheus, Datadog, etc.)
+Health checks are also used by the containerized environment and Kubernetes probes.
 
-**Quick Test:**
+**Quick test:**
+
 ```bash
-# Test all services
 curl http://localhost:4000/health/detailed
-
-# Run integration tests
-./scripts/test-health-checks.sh
 ```
 
 📖 **Documentation:**
+
 - [Health Checks Guide](docs/HEALTH_CHECKS.md)
-- [Implementation Details](docs/HEALTH_CHECKS_IMPLEMENTATION.md)
-- [Quick Reference](docs/HEALTH_CHECKS_QUICK_REF.md)
 
-## � Security & Rate Limiting
+## 🔐 Security & Rate Limiting
 
-Comprehensive security measures protect the API from abuse and ensure fair usage:
+The API includes rate limiting and request protection mechanisms.
 
-**Rate Limiting Features:**
-- 🛡️ **Multi-tier Rate Limiting:** Short (10/sec), Medium (100/min), Long (1000/hour)
-- 🔐 **Brute Force Protection:** Login limited to 3 attempts per minute
-- 🚫 **Spam Prevention:** Registration limited to 3 per 5 minutes
-- ⚡ **Resource Protection:** AI operations have moderate limits (5-10/min)
-- 👤 **Smart Tracking:** User ID for authenticated, IP for anonymous requests
-- 💊 **Health Check Exception:** Monitoring endpoints excluded from limits
+**Rate limiting:**
 
-**Endpoint-Specific Limits:**
+- Short-term request limits
+- Medium-term request limits
+- Long-term request limits
+- Login attempt protection
+- Registration protection
+- AI operation limits
+- Separate handling for authenticated and anonymous users
+- Health check endpoints excluded from application limits
+
+**Example limits:**
 
 | Endpoint | Limit | Purpose |
-|----------|-------|---------|
-| Login | 3/min | Prevent brute force |
-| Registration | 3/5min | Prevent spam |
-| AI Chat | 10/min | Control AI usage |
-| AI Analysis | 5/min | Protect resources |
-| Dashboard | 50/min | Standard operations |
+|---|---|---|
+| Login | 3/min | Brute-force protection |
+| Registration | 3/5min | Spam prevention |
+| AI Chat | 10/min | AI resource protection |
+| AI Analysis | 5/min | Resource protection |
+| Dashboard | 50/min | Standard API usage |
 
-**Quick Test:**
+Requests exceeding the configured limits receive a `429 Too Many Requests` response.
+
+**Testing:**
+
 ```bash
-# Test rate limiting
 ./scripts/test-rate-limiting.sh
-
-# Response when limit exceeded (429 Too Many Requests)
-# { "errors": [{ "message": "ThrottlerException: Too Many Requests" }] }
 ```
 
 📖 **Documentation:**
-- [Rate Limiting Implementation](RATE_LIMITING_IMPLEMENTATION.md)
-- [Quick Reference](RATE_LIMITING_QUICK_REF.md)
-- [Complete Summary](RATE_LIMITING_COMPLETE.md)
 
-## �🚀 Deployment
+- [Rate Limiting Guide](docs/RATE_LIMITING.md)
 
-* **Backend & AI microservice:** Railway / AWS
-* **Frontend:** Vercel
-* **Mobile:** Expo (optional)
-* **CI/CD:** GitHub Actions (lint, test, build, deploy)
+## 📁 Project Structure
 
-## 💡 Why This Project Adds Value to My Portfolio
+```text
+microservices-dashboard/
+├── backend/
+│   ├── api-gateway/
+│   │   ├── src/
+│   │   │   ├── modules/
+│   │   │   ├── resolvers/
+│   │   │   └── main.ts
+│   │   ├── Dockerfile
+│   │   └── ...
+│   │
+│   ├── worker-service/
+│   │   ├── src/
+│   │   │   ├── jobs/
+│   │   │   ├── services/
+│   │   │   └── main.ts
+│   │   ├── Dockerfile
+│   │   └── ...
+│   │
+│   ├── ai-service/
+│   │   ├── src/
+│   │   │   ├── modules/
+│   │   │   ├── services/
+│   │   │   └── main.ts
+│   │   ├── Dockerfile
+│   │   └── ...
+│   │
+│   └── common/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   └── utils/
+│   ├── tests/
+│   └── Dockerfile
+│
+├── mobile/
+│   └── ...
+│
+├── k8s/
+├── scripts/
+├── docs/
+├── docker-compose.dev.yml
+├── README.md
+└── package.json
+```
 
-#### ✅ Enterprise full-stack architecture – designed API Gateway, background worker services, and a dedicated AI microservice using NestJS.
-#### ✅ AI-powered insights & predictive analytics – generates real-time data summaries, trend detection, and actionable recommendations using OpenAI API and optional ML models.
-#### ✅ AI chat assistant – allows intelligent querying of aggregated API data directly from the dashboard.
-#### ✅ Scalable & performant backend – Redis caching, BullMQ queues, PostgreSQL database, and secure OAuth2 authentication.
-#### ✅ Modern frontend & optional mobile – Next.js 15 dashboard with React 19, dynamic charts, modular components, and optional React Native / Expo app.
-#### ✅ DevOps & production readiness – Dockerized microservices, CI/CD pipeline with GitHub Actions, and deployed to cloud platforms (Vercel, Railway/AWS).
-#### ✅ Testing discipline – unit and integration tests for backend and AI services, React Testing Library for frontend, with coverage reports and badges.
+## 🛠️ Tech Stack
+
+**Backend:** TypeScript · Node.js · NestJS · GraphQL · REST · PostgreSQL · TypeORM · Redis
+
+**Frontend:** TypeScript · React 19 · Next.js 15 · Recharts · Chart.js
+
+**AI:** OpenAI API · LangChain
+
+**Infrastructure:** Docker · Docker Compose · GitHub Actions · Kubernetes
+
+**Testing:** Jest · React Testing Library
+
+## 🧪 Running Locally
+
+Clone the repository:
+
+```bash
+git clone https://github.com/sasha39612/scalable-microservices-dashboard-with-ai.git
+cd scalable-microservices-dashboard-with-ai
+```
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Start the development environment:
+
+```bash
+docker compose -f docker-compose.dev.yml up
+```
+
+PostgreSQL is not included in the development Docker Compose configuration.
+The API Gateway expects PostgreSQL to be available separately through `DATABASE_URL`.
+
+For PostgreSQL configuration, see [Remote Database Setup](docs/REMOTE_DB_SETUP.md).
+
+Check the API Gateway:
+
+```bash
+curl http://localhost:4000/health
+```
+
+GraphQL: `http://localhost:4000/graphql`
+
+Check the environment configuration and project documentation for required API keys and service configuration.
+
+## 🧠 Engineering Highlights
+
+**Service separation**
+
+The application separates API handling, background processing, and AI functionality into dedicated services.
+
+**Asynchronous processing**
+
+Background jobs are handled separately from synchronous API requests, allowing longer-running operations to execute without blocking the main request flow.
+
+**Caching**
+
+Redis is used to cache frequently requested data and reduce unnecessary external API and AI requests.
+
+**API design**
+
+The API Gateway exposes both GraphQL and REST interfaces depending on the use case.
+
+**Security**
+
+Authentication, rate limiting, request validation, and environment-based configuration are used to protect application resources.
+
+**Reliability**
+
+Health endpoints provide service-level visibility and integrate with container orchestration and Kubernetes probes.
+
+**Testing**
+
+Backend and frontend tests are included to validate application logic, API behaviour, and UI components.
+
+## 📌 Portfolio Highlights
+
+- Designed a full-stack microservices architecture using NestJS and TypeScript.
+- Implemented an API Gateway exposing GraphQL and REST APIs.
+- Implemented background task processing with a custom in-memory queue, including priorities, retries, and exponential backoff.
+- Built a dedicated AI service integrating OpenAI.
+- Implemented caching for external API and AI responses.
+- Added authentication and API rate limiting.
+- Built a Next.js 15 / React 19 analytics dashboard.
+- Added automated tests for backend and frontend functionality.
+- Containerized services with Docker and added CI workflows.
+- Added health checks and Kubernetes configuration.
+
+## 🚧 Project Status
+
+This project is primarily a portfolio and engineering demonstration focused on architecture, backend development, AI integration, testing, and infrastructure.
+
+Some infrastructure and deployment configurations are provided as part of the project but may require environment-specific configuration before production use.
+
+## 📄 License
+
+See the repository license for details.
