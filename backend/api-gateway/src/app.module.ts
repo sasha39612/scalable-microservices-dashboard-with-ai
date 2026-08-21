@@ -25,7 +25,7 @@ import { GqlThrottlerGuard } from './guards/gql-throttler.guard';
 import { rateLimitConfig } from './config/rate-limit.config';
 import { AuditLoggerInitializer } from './services/audit-logger-initializer';
 import { AuditInterceptor } from './interceptors/audit.interceptor';
-import { CacheService } from './services/cache.service';
+import { CacheModule } from './services/cache.module';
 import { CacheInterceptor } from './interceptors/cache.interceptor';
 import { GraphQLCacheInterceptor } from './interceptors/graphql-cache.interceptor';
 
@@ -67,6 +67,7 @@ import { GraphQLCacheInterceptor } from './interceptors/graphql-cache.intercepto
     }),
     
     // Application modules
+    CacheModule, // Global module providing CacheService to all feature modules
     SecurityModule, // Include security module first for early middleware application
     AuthModule,
     UserModule,
@@ -79,7 +80,6 @@ import { GraphQLCacheInterceptor } from './interceptors/graphql-cache.intercepto
     WorkerClient,
     AIClient,
     AuditLoggerInitializer,
-    CacheService,
     // Apply audit logging globally
     {
       provide: APP_INTERCEPTOR,
