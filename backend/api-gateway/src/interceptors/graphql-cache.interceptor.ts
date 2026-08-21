@@ -70,7 +70,8 @@ export class GraphQLCacheInterceptor implements NestInterceptor {
     const infoObj = info as Record<string, unknown>;
     const requestObj = request as Record<string, unknown>;
     const queryName = infoObj.fieldName as string;
-    const operation = (infoObj.operation as Record<string, unknown>)?.loc?.source?.body as string;
+    const operation = (infoObj.operation as { loc?: { source?: { body?: string } } })?.loc?.source
+      ?.body as string;
     
     // Include user ID for user-specific queries
     const userId = (requestObj.user as Record<string, unknown>)?.id || 'anonymous';
@@ -104,7 +105,8 @@ export class GraphQLCacheInterceptor implements NestInterceptor {
 
   private hasNoCacheDirective(info: unknown): boolean {
     // Check if the query has a @noCache directive
-    const directives = (info as Record<string, unknown>)?.fieldNodes?.[0]?.directives || [];
-    return directives.some((directive: Record<string, unknown>) => directive.name?.value === 'noCache');
+    const infoObj = info as { fieldNodes?: Array<{ directives?: Array<{ name?: { value?: string } }> }> };
+    const directives = infoObj?.fieldNodes?.[0]?.directives || [];
+    return directives.some((directive) => directive.name?.value === 'noCache');
   }
 }

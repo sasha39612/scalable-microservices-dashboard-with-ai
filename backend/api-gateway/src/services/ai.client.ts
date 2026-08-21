@@ -169,7 +169,10 @@ export class AIClient {
    * Get AI-powered insights based on data
    */
   @Cacheable({ 
-    key: (request) => `ai:insights:${request.insightType}:${JSON.stringify(request.data).substring(0, 50)}`, 
+    key: (request) => {
+      const r = request as InsightRequest;
+      return `ai:insights:${r.insightType}:${JSON.stringify(r.data).substring(0, 50)}`;
+    },
     ttl: 900 
   })
   async getInsights(request: InsightRequest): Promise<Insight[]> {
@@ -293,7 +296,10 @@ export class AIClient {
    * Generate summary from text or data
    */
   @Cacheable({ 
-    key: (request) => `ai:summary:${request.type}:${JSON.stringify(request.content).substring(0, 50)}`, 
+    key: (request) => {
+      const r = request as { content: string | Record<string, unknown>; type: 'text' | 'data' };
+      return `ai:summary:${r.type}:${JSON.stringify(r.content).substring(0, 50)}`;
+    },
     ttl: 1800 
   })
   async generateSummary(request: {
@@ -341,7 +347,10 @@ export class AIClient {
    * Predict trends based on historical data
    */
   @Cacheable({ 
-    key: (request) => `ai:trends:${request.metricName}:${request.predictionHorizon}:${request.historicalData.length}`, 
+    key: (request) => {
+      const r = request as { metricName: string; predictionHorizon: number; historicalData: unknown[] };
+      return `ai:trends:${r.metricName}:${r.predictionHorizon}:${r.historicalData.length}`;
+    },
     ttl: 3600 
   })
   async predictTrends(request: {
@@ -400,7 +409,10 @@ export class AIClient {
    * Detect anomalies in data
    */
   @Cacheable({ 
-    key: (request) => `ai:anomalies:${request.dataPoints.length}:${request.sensitivity || 'medium'}`, 
+    key: (request) => {
+      const r = request as { dataPoints: unknown[]; sensitivity?: 'low' | 'medium' | 'high' };
+      return `ai:anomalies:${r.dataPoints.length}:${r.sensitivity || 'medium'}`;
+    },
     ttl: 600 
   })
   async detectAnomalies(request: {
