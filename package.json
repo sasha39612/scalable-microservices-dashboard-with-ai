@@ -43,6 +43,9 @@
     "reflect-metadata": "^0.2.2"
   },
   "pnpm": {
-    "hoist": true
+    "hoist": true,
+    "overrides": {
+      "postcss": ">=8.5.23"
+    }
   }
 }
