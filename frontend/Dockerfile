@@ -6,8 +6,9 @@ RUN apk upgrade --no-cache busybox busybox-binsh ssl_client
 
 WORKDIR /app
 
-# Install pnpm globally
-RUN npm install -g pnpm@9
+# Install pnpm globally (python3/make/g++ needed to compile native deps)
+RUN apk add --no-cache python3 make g++ && \
+    npm install -g pnpm@9
 
 # Copy root workspace files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./

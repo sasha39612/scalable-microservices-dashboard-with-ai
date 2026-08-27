@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app/backend/ai-service
 
 # Install curl for healthchecks and pnpm globally
-RUN apk add --no-cache curl && \
+RUN apk add --no-cache curl python3 make g++ && \
     npm install -g pnpm@9 ts-node-dev
 
 # Copy common shared code first

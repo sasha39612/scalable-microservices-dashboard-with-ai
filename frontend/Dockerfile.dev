@@ -4,8 +4,9 @@ FROM node:20-alpine
 # Upgrade busybox to fix security vulnerabilities
 RUN apk upgrade --no-cache busybox busybox-binsh ssl_client
 
-# Install pnpm globally
-RUN npm install -g pnpm@9
+# Install pnpm globally (python3/make/g++ needed to compile native deps)
+RUN apk add --no-cache python3 make g++ && \
+    npm install -g pnpm@9
 
 # Set working directory
 WORKDIR /app
