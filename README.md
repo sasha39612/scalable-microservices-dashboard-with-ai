@@ -1,6 +1,8 @@
 # Scalable Microservices Dashboard with AI 🚀🤖
 
-A full-stack TypeScript application demonstrating a microservices architecture for aggregating external APIs, processing background jobs, caching data, and providing an interactive analytics dashboard with AI-powered features.
+## What is this?
+
+A microservices dashboard where users manage background tasks and jobs, track live analytics, and chat with an AI assistant that summarizes their data and surfaces insights — built as a full-stack TypeScript demo of production-style service separation, async processing, caching, and authentication across a NestJS backend and Next.js frontend.
 
 ## ✨ Overview
 
@@ -348,3 +350,7 @@ Some infrastructure and deployment configurations are provided as part of the pr
 ## 📄 License
 
 See the repository license for details.
+
+## Author
+
+Oleksandr Stolyarov — [Portfolio](https://portfolio-omega-ten-jmp4r3edbt.vercel.app/) · [LinkedIn](https://www.linkedin.com/in/oleksandr-stolyarov-58343658/) · [Email](mailto:stolyarov_396@icloud.com)
