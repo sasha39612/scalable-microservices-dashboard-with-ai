@@ -4,7 +4,7 @@ WORKDIR /app/backend/api-gateway
 
 # Install global dependencies (python3/make/g++ needed to compile native deps like inotify)
 RUN apk add --no-cache python3 make g++ && \
-    npm install -g pnpm@9 ts-node-dev
+    npm install -g pnpm@9
 
 # Copy package and config files
 COPY backend/api-gateway/package.json ./package.json
