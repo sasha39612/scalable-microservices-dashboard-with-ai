@@ -4,7 +4,7 @@ WORKDIR /app/backend/ai-service
 
 # Install curl for healthchecks and pnpm globally
 RUN apk add --no-cache curl && \
-    npm install -g pnpm ts-node-dev
+    npm install -g pnpm@9 ts-node-dev
 
 # Copy common shared code first
 COPY backend/common ../common

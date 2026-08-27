@@ -7,7 +7,7 @@ RUN apk upgrade --no-cache busybox busybox-binsh ssl_client
 WORKDIR /app
 
 # Install pnpm globally
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 # Copy root package files and tsconfig
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.json ./
@@ -41,7 +41,7 @@ WORKDIR /app
 
 # Install curl for healthchecks and pnpm
 RUN apk add --no-cache curl && \
-    npm install -g pnpm
+    npm install -g pnpm@9
 
 # Copy root package files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./

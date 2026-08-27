@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app/backend/api-gateway
 
 # Install global dependencies
-RUN npm install -g pnpm ts-node-dev
+RUN npm install -g pnpm@9 ts-node-dev
 
 # Copy package and config files
 COPY backend/api-gateway/package.json ./package.json

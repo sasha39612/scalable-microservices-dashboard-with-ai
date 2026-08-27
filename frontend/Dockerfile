@@ -7,7 +7,7 @@ RUN apk upgrade --no-cache busybox busybox-binsh ssl_client
 WORKDIR /app
 
 # Install pnpm globally
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 # Copy root workspace files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -49,7 +49,7 @@ RUN apk upgrade --no-cache busybox busybox-binsh ssl_client
 WORKDIR /app
 
 # Install pnpm globally
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 # Copy root workspace files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
