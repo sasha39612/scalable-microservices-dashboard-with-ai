@@ -178,7 +178,7 @@ jobs:
           # from k8s/postgres.yaml instead of requiring a real external database.
           echo "🔧 Pointing app-secrets at the in-cluster smoke-test database..."
           kubectl patch secret app-secrets -n dashboard-app --type merge -p \
-            "{\"data\":{\"DATABASE_URL\":\"$(echo -n 'postgresql://dashboard:dashboard-ci-password@postgres:5432/microservices_dashboard' | base64)\"}}"
+            "{\"data\":{\"DATABASE_URL\":\"$(echo -n 'postgresql://dashboard:dashboard-ci-password@postgres:5432/microservices_dashboard' | base64 -w 0)\"}}"
 
           echo "⏳ Waiting for Postgres to be ready..."
           kubectl wait --for=condition=available --timeout=120s deployment/postgres -n dashboard-app
