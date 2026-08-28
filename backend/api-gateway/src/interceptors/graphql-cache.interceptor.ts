@@ -18,6 +18,12 @@ export class GraphQLCacheInterceptor implements NestInterceptor {
   constructor(private readonly cacheService: CacheService) {}
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
+    // This interceptor only applies GraphQL-specific caching; skip it for
+    // plain REST requests (e.g. health checks), which have no GraphQL info.
+    if (context.getType<'http' | 'graphql'>() !== 'graphql') {
+      return next.handle();
+    }
+
     const gqlContext = GqlExecutionContext.create(context);
     const info = gqlContext.getInfo();
     const args = gqlContext.getArgs();

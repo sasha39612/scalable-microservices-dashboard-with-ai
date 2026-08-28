@@ -3,6 +3,7 @@ import { WorkerClient } from './services/worker.client';
 import { AIClient } from './services/ai.client';
 import { CacheService } from './services/cache.service';
 import { Public } from './modules/auth/decorators/public.decorator';
+import { DisableDdosProtection } from './security/security.decorators';
 
 interface ServiceHealth {
   status: 'healthy' | 'unhealthy' | 'degraded';
@@ -39,6 +40,7 @@ export class HealthController {
    * Basic health check endpoint
    */
   @Public()
+  @DisableDdosProtection()
   @Get()
   check() {
     return {
@@ -52,6 +54,7 @@ export class HealthController {
    * Comprehensive health check including all services
    */
   @Public()
+  @DisableDdosProtection()
   @Get('detailed')
   async detailedCheck(): Promise<HealthCheckResponse> {
     const services = {

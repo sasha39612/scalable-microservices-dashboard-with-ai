@@ -1,5 +1,23 @@
 import { SetMetadata } from '@nestjs/common';
 
+/**
+ * JSON.stringify that tolerates circular references (e.g. raw Express
+ * Request/Response objects passed as handler args), replacing repeat
+ * references with '[Circular]' instead of throwing.
+ */
+function safeStringify(value: unknown): string {
+  const seen = new WeakSet();
+  return JSON.stringify(value, (_key, val) => {
+    if (typeof val === 'object' && val !== null) {
+      if (seen.has(val)) {
+        return '[Circular]';
+      }
+      seen.add(val);
+    }
+    return val;
+  });
+}
+
 // Metadata keys
 export const CACHE_KEY_METADATA = 'cache:key';
 export const CACHE_TTL_METADATA = 'cache:ttl';
@@ -176,8 +194,8 @@ export class CacheKeyUtils {
     if (paramNames.length > 0) {
       paramNames.forEach((paramName, index) => {
         const placeholder = `{{${paramName}}}`;
-        const value = typeof args[index] === 'object' 
-          ? JSON.stringify(args[index]) 
+        const value = typeof args[index] === 'object'
+          ? safeStringify(args[index])
           : String(args[index]);
         key = key.replace(new RegExp(placeholder, 'g'), value);
       });
@@ -195,7 +213,7 @@ export class CacheKeyUtils {
    * @returns Generated cache key
    */
   static generateDefaultKey(className: string, methodName: string, args: unknown[]): string {
-    const argsHash = args.length > 0 ? JSON.stringify(args) : 'no-args';
+    const argsHash = args.length > 0 ? safeStringify(args) : 'no-args';
     const hash = createHash('md5')
       .update(argsHash)
       .digest('hex')
