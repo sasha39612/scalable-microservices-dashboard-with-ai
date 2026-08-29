@@ -65,4 +65,4 @@ WORKDIR /app/backend/worker-service
 
 EXPOSE 3003
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/worker-service/src/main.js"]

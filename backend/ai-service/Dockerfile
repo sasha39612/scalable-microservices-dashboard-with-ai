@@ -65,4 +65,4 @@ WORKDIR /app/backend/ai-service
 
 EXPOSE 5000
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/ai-service/src/main.js"]
