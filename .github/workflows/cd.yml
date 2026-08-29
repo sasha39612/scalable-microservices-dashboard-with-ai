@@ -183,6 +183,13 @@ jobs:
           echo "⏳ Waiting for Postgres to be ready..."
           kubectl wait --for=condition=available --timeout=120s deployment/postgres -n dashboard-app
 
+          # The plain in-cluster Postgres has no SSL configured, and NODE_ENV=production
+          # (set in api-gateway.yaml/worker-service.yaml) makes TypeORM require SSL and
+          # skip schema sync (see backend/common/src/db/connection.ts). Use NODE_ENV=test
+          # here so the smoke-test app can actually connect and create its schema.
+          echo "🔧 Switching api-gateway and worker-service to NODE_ENV=test for this smoke test..."
+          kubectl set env deployment/api-gateway deployment/worker-service -n dashboard-app NODE_ENV=test
+
           echo "🔁 Restarting api-gateway and worker-service to pick up the database..."
           kubectl rollout restart deployment/api-gateway deployment/worker-service -n dashboard-app
 
