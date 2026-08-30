@@ -73,6 +73,8 @@ services:
       - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY:-ai-secret-key-change-in-production}
     working_dir: /app/backend/api-gateway
     command: pnpm start:dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       ai-service:
         condition: service_healthy
@@ -104,6 +106,8 @@ services:
       - WORKER_SERVICE_API_KEY=${WORKER_SERVICE_API_KEY:-worker-secret-key-change-in-production}
     working_dir: /app/backend/worker-service
     command: pnpm start:dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4001/api/health"]
       interval: 30s
@@ -133,6 +137,8 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
     working_dir: /app/backend/ai-service
     command: pnpm start:dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       redis:
         condition: service_healthy
