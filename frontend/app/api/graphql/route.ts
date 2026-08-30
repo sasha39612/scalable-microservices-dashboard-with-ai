@@ -32,6 +32,12 @@ export async function POST(request: NextRequest) {
       headers['Authorization'] = authHeader;
     }
 
+    // Forward the real client User-Agent so downstream bot/DDoS heuristics
+    // see the actual browser instead of this server-to-server fetch
+    const clientUserAgent = request.headers.get('user-agent');
+    // @ts-expect-error TypeScript doesn't allow index access on const headers object
+    headers['User-Agent'] = clientUserAgent || 'Dashboard-Frontend-Proxy/1.0';
+
     // Try multiple possible URLs for the GraphQL endpoint
     const possibleUrls = [
       process.env.NEXT_PUBLIC_API_URL,

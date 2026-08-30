@@ -18,9 +18,11 @@ import { Reflector } from '@nestjs/core';
 @Injectable()
 export class WafGuard implements CanActivate {
   // SQL injection patterns
+  // Note: patterns require a quote/encoded-quote combined with SQL syntax,
+  // rather than flagging a bare quote or semicolon (too common in legitimate
+  // input — names like "O'Brien", GraphQL query punctuation, etc.)
   private readonly sqlInjectionPatterns = [
-    /(\b(ALTER|CREATE|DELETE|DROP|EXEC|EXECUTE|INSERT|MERGE|SELECT|UPDATE|UNION|INTO|FROM|WHERE)\b)/gi,
-    /('|(\\')|("|\\")|(;|\\;))/gi,
+    /((\%27)|(\'))\s*(\b(ALTER|CREATE|DELETE|DROP|EXEC|EXECUTE|INSERT|MERGE|SELECT|UPDATE|UNION|INTO|FROM|WHERE)\b)/gi,
     /((\%27)|(\')|((\%3D)|(=))[^\n]*((\%27)|(\')|((\%3B)|(;))))/gi,
     /((\%27)|(\'))union/gi,
     /\w*((\%27)|(\'))((\%6F)|o|(\%4F))((\%72)|r|(\%52))/gi,
@@ -51,10 +53,16 @@ export class WafGuard implements CanActivate {
   ];
 
   // Command injection patterns
+  // Note: no shell/child_process usage of user input exists in this codebase,
+  // so these only need to catch actual shell metacharacter *syntax*
+  // (subshells, command substitution, chained shell commands), not a bare
+  // '$', ';', '&', '|', or backtick — those appear constantly in legitimate
+  // input (GraphQL `$variables`, browser User-Agent strings, punctuation).
   private readonly commandInjectionPatterns = [
-    /(\||\&|\;|\$|\`)/gi,
-    /(nc |ncat |netcat |curl |wget )/gi,
-    /(chmod |chown |rm |mv |cp )/gi,
+    /\$\([^)]+\)/g, // $(command) substitution
+    /`[^`]+`/g, // `command` substitution
+    /;\s*(nc|ncat|netcat|curl|wget|chmod|chown|rm|mv|cp)\s/gi, // chained shell command
+    /\|\s*(nc|ncat|netcat|curl|wget|sh|bash)\b/gi, // piped into a shell/tool
   ];
 
   // LDAP injection patterns
@@ -78,7 +86,7 @@ export class WafGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if WAF is disabled for this route
-    const isWafDisabled = this.reflector.get<boolean>('disable-waf', context.getHandler());
+    const isWafDisabled = this.reflector.getAllAndOverride<boolean>('disable-waf', [context.getHandler(), context.getClass()]);
     if (isWafDisabled) {
       return true;
     }
@@ -212,20 +220,40 @@ export class WafGuard implements CanActivate {
     return patterns.some(pattern => pattern.test(input));
   }
 
+  // Headers legitimately contain characters (';', '(', ')', '$', etc.) that
+  // the SQL/command/NoSQL patterns above would false-positive on — a real
+  // browser User-Agent like "Mozilla/5.0 (Macintosh; Intel Mac OS X ...)"
+  // trips those every time. Headers only need the XSS/path-traversal checks,
+  // since those patterns require actual markup/traversal syntax, not just
+  // common punctuation.
+  private scanHeaderString(input: string, location: string): void {
+    if (!input || typeof input !== 'string') return;
+
+    const decodedInput = this.decodeInput(input);
+
+    if (this.matchesPatterns(decodedInput, this.xssPatterns)) {
+      throw new Error(`XSS attack detected in ${location}`);
+    }
+
+    if (this.matchesPatterns(decodedInput, this.pathTraversalPatterns)) {
+      throw new Error(`Path traversal detected in ${location}`);
+    }
+  }
+
   private scanHeaders(headers: any): void {
     const suspiciousHeaders = ['user-agent', 'referer', 'origin'];
-    
+
     for (const headerName of suspiciousHeaders) {
       const headerValue = headers[headerName];
       if (headerValue && typeof headerValue === 'string') {
-        this.scanString(headerValue, `header ${headerName}`);
+        this.scanHeaderString(headerValue, `header ${headerName}`);
       }
     }
 
     // Check for suspicious custom headers
     for (const [name, value] of Object.entries(headers)) {
       if (typeof value === 'string' && name.toLowerCase().startsWith('x-')) {
-        this.scanString(value, `header ${name}`);
+        this.scanHeaderString(value, `header ${name}`);
       }
     }
   }

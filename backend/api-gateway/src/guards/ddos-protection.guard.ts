@@ -42,7 +42,7 @@ export class DdosProtectionGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if DDoS protection is disabled for this route
-    const isDdosProtectionDisabled = this.reflector.get<boolean>('disable-ddos', context.getHandler());
+    const isDdosProtectionDisabled = this.reflector.getAllAndOverride<boolean>('disable-ddos', [context.getHandler(), context.getClass()]);
     if (isDdosProtectionDisabled) {
       return true;
     }
