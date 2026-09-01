@@ -1,5 +1,6 @@
 import { ObjectType, Field, ID, registerEnumType, InputType, Int } from '@nestjs/graphql';
 import { GraphQLJSON } from 'graphql-type-json';
+import { IsEnum, IsInt, IsObject, IsOptional, IsString } from 'class-validator';
 
 // Enums
 export enum TaskStatus {
@@ -95,41 +96,57 @@ export class TasksResponse {
 @InputType()
 export class CreateTaskInput {
   @Field()
+  @IsString()
   type: string;
 
   @Field(() => GraphQLJSON)
+  @IsObject()
   payload: Record<string, unknown>;
 
   @Field(() => TaskPriority, { nullable: true })
+  @IsOptional()
+  @IsEnum(TaskPriority)
   priority?: TaskPriority;
 }
 
 @InputType()
 export class CreateJobInput {
   @Field()
+  @IsString()
   name: string;
 
   @Field()
+  @IsString()
   type: string;
 
   @Field()
+  @IsString()
   schedule: string;
 
   @Field(() => GraphQLJSON)
+  @IsObject()
   payload: Record<string, unknown>;
 }
 
 @InputType()
 export class TaskFiltersInput {
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   status?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   type?: string;
 
   @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
   limit?: number;
 
   @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
   offset?: number;
 }
