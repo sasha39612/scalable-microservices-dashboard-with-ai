@@ -41,7 +41,7 @@ services:
       - ./frontend/tailwind.config.ts:/app/tailwind.config.ts
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://api-gateway:4000/graphql
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://169.58.224.26:4000/graphql}
     working_dir: /app
     command: pnpm dev
     depends_on:
