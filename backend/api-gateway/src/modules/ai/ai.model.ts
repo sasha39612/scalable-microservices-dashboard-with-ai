@@ -1,5 +1,19 @@
 import { ObjectType, Field, ID, registerEnumType, InputType, Int, Float } from '@nestjs/graphql';
 import { GraphQLJSON } from 'graphql-type-json';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsDate,
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 
 // Enums
 export enum MessageRole {
@@ -177,101 +191,153 @@ export class SummaryResponse {
 @InputType()
 export class ChatMessageInput {
   @Field(() => MessageRole)
+  @IsEnum(MessageRole)
   role: MessageRole;
 
   @Field()
+  @IsString()
   content: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
   timestamp?: Date;
 }
 
 @InputType()
 export class ChatOptionsInput {
   @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(2)
   temperature?: number;
 
   @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
   maxTokens?: number;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   model?: string;
 }
 
 @InputType()
 export class ChatRequestInput {
   @Field(() => [ChatMessageInput])
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ChatMessageInput)
   messages: ChatMessageInput[];
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   userId?: string;
 
   @Field(() => GraphQLJSON, { nullable: true })
+  @IsOptional()
+  @IsObject()
   context?: Record<string, unknown>;
 
   @Field(() => ChatOptionsInput, { nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ChatOptionsInput)
   options?: ChatOptionsInput;
 }
 
 @InputType()
 export class InsightRequestInput {
   @Field(() => InsightType)
+  @IsEnum(InsightType)
   type: InsightType;
 
   @Field(() => GraphQLJSON)
+  @IsObject()
   data: Record<string, unknown>;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   userId?: string;
 
   @Field(() => GraphQLJSON, { nullable: true })
+  @IsOptional()
+  @IsObject()
   context?: Record<string, unknown>;
 }
 
 @InputType()
 export class TimeRangeInput {
   @Field()
+  @IsDate()
+  @Type(() => Date)
   start: Date;
 
   @Field()
+  @IsDate()
+  @Type(() => Date)
   end: Date;
 }
 
 @InputType()
 export class AnalysisRequestInput {
   @Field(() => DataType)
+  @IsEnum(DataType)
   dataType: DataType;
 
   @Field(() => GraphQLJSON)
+  @IsArray()
   data: unknown[];
 
   @Field(() => AnalysisType, { nullable: true })
+  @IsOptional()
+  @IsEnum(AnalysisType)
   analysisType?: AnalysisType;
 
   @Field(() => TimeRangeInput, { nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TimeRangeInput)
   timeRange?: TimeRangeInput;
 }
 
 @InputType()
 export class RecommendationsRequestInput {
   @Field()
+  @IsString()
   userId: string;
 
   @Field(() => GraphQLJSON)
+  @IsObject()
   context: Record<string, unknown>;
 
   @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
   count?: number;
 }
 
 @InputType()
 export class SummaryRequestInput {
   @Field()
+  @IsString()
   text: string;
 
   @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
   maxLength?: number;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   style?: string;
 }
