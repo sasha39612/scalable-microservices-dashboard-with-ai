@@ -4,6 +4,7 @@ import { User } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
 import { RateLimits } from '../../config/rate-limit.config';
 
 @Resolver(() => User)
@@ -60,8 +61,8 @@ export class AuthResolver {
   }
 
   @Query(() => User, { name: 'me', description: 'Get current authenticated user' })
-  async getCurrentUser(@Args('userId') userId: string): Promise<User | null> {
-    const currentUser = await this.userService.findOne(userId);
+  async getCurrentUser(@CurrentUser() user: { sub: string }): Promise<User | null> {
+    const currentUser = await this.userService.findOne(user.sub);
     return currentUser || null;
   }
 

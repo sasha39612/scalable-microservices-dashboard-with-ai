@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           query: `
             query VerifyToken {
-              verifyToken {
+              me {
                 id
                 email
                 name
@@ -63,8 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
-      if (data.data?.verifyToken) {
-        setUser(data.data.verifyToken);
+      if (data.data?.me) {
+        setUser(data.data.me);
       } else {
         // Token invalid, clear it
         localStorage.removeItem('authToken');
