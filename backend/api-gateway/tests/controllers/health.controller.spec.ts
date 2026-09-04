@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HealthController } from '../../src/health.controller';
 import { WorkerClient } from '../../src/services/worker.client';
 import { AIClient } from '../../src/services/ai.client';
+import { CacheService } from '../../src/services/cache.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 describe('HealthController', () => {
@@ -18,6 +19,17 @@ describe('HealthController', () => {
       healthCheck: jest.fn(),
     };
 
+    const mockCacheService = {
+      getCacheStats: jest.fn().mockReturnValue({
+        redisConnected: true,
+        memoryCacheSize: 0,
+        memoryCacheKeys: [],
+      }),
+      get: jest.fn().mockResolvedValue({ timestamp: Date.now() }),
+      set: jest.fn().mockResolvedValue(true),
+      delete: jest.fn().mockResolvedValue(true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
       providers: [
@@ -28,6 +40,10 @@ describe('HealthController', () => {
         {
           provide: AIClient,
           useValue: mockAIClient,
+        },
+        {
+          provide: CacheService,
+          useValue: mockCacheService,
         },
       ],
     }).compile();

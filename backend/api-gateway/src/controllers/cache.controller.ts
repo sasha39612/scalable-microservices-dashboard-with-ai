@@ -130,44 +130,6 @@ export class CacheController {
   }
 
   /**
-   * Warm up cache with common queries (Admin only)
-   */
-  @Roles(UserRole.Admin)
-  @Post('warmup')
-  async warmupCache() {
-    const warmedKeys: string[] = [];
-    
-    try {
-      // This is a placeholder - in a real implementation, you would
-      // pre-populate the cache with common queries
-      
-      // Example: Warm up with system stats
-      await this.cacheService.set('system:stats', {
-        timestamp: new Date(),
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-      }, 300);
-      warmedKeys.push('system:stats');
-
-      // Add more warmup logic here based on your specific use case
-      
-      return {
-        success: true,
-        warmedKeys,
-        count: warmedKeys.length,
-        timestamp: new Date(),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        warmedKeys,
-        timestamp: new Date(),
-      };
-    }
-  }
-
-  /**
    * Cache health check
    */
   @Get('health')

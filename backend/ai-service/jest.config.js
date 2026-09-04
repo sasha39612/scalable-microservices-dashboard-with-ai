@@ -1,10 +1,12 @@
 module.exports = {
   verbose: true,
+  preset: "ts-jest",
   testEnvironment: "node",
-  testMatch: ["<rootDir>/__tests__/**/*.js"], // Only match JS tests for now
-  moduleFileExtensions: ["js", "json"],
+  testMatch: ["<rootDir>/tests/**/*.spec.ts"],
+  setupFiles: ["<rootDir>/jest.setup.js"],
+  moduleFileExtensions: ["ts", "js", "json"],
   collectCoverageFrom: [
-    "**/src/**/*.{js}",
+    "**/src/**/*.{ts,js}",
     "!**/node_modules/**",
     "!**/dist/**",
     "!**/build/**",

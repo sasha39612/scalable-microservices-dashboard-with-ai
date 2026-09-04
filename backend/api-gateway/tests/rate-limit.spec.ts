@@ -32,24 +32,29 @@ describe('Rate Limiting', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const config = rateLimitConfig as any;
       expect(config.throttlers).toBeDefined();
-      expect(config.throttlers).toHaveLength(3);
-      
-      const [short, medium, long] = config.throttlers;
-      
+      expect(config.throttlers).toHaveLength(4);
+
+      const [short, medium, long, daily] = config.throttlers;
+
       // Verify short throttler (1 second, 10 requests)
       expect(short.name).toBe('short');
       expect(short.ttl).toBe(1000);
       expect(short.limit).toBe(10);
-      
+
       // Verify medium throttler (1 minute, 100 requests)
       expect(medium.name).toBe('medium');
       expect(medium.ttl).toBe(60000);
       expect(medium.limit).toBe(100);
-      
+
       // Verify long throttler (1 hour, 1000 requests)
       expect(long.name).toBe('long');
       expect(long.ttl).toBe(3600000);
       expect(long.limit).toBe(1000);
+
+      // Verify daily throttler (24 hours, 10000 requests)
+      expect(daily.name).toBe('daily');
+      expect(daily.ttl).toBe(24 * 3600000);
+      expect(daily.limit).toBe(10000);
     });
 
     it('should skip health checks', () => {
@@ -86,42 +91,42 @@ describe('Rate Limiting', () => {
       // Login should have strict limits (3 per minute)
       expect(RateLimits.LOGIN.short.limit).toBe(3);
       expect(RateLimits.LOGIN.short.ttl).toBe(60000);
-      
-      // Register should have strict limits (3 per 5 minutes)
-      expect(RateLimits.REGISTER.short.limit).toBe(3);
+
+      // Register should have strict limits (1 per 5 minutes)
+      expect(RateLimits.REGISTER.short.limit).toBe(1);
       expect(RateLimits.REGISTER.short.ttl).toBe(300000);
-      
-      // Auth operations should have moderate limits (5 per minute)
-      expect(RateLimits.AUTH.short.limit).toBe(5);
+
+      // Auth operations should have strict limits (3 per minute)
+      expect(RateLimits.AUTH.short.limit).toBe(3);
       expect(RateLimits.AUTH.short.ttl).toBe(60000);
     });
 
     it('should have moderate limits for AI operations', () => {
-      // AI Chat should allow 10 messages per minute
-      expect(RateLimits.AI_CHAT.short.limit).toBe(10);
+      // AI Chat should allow 5 messages per minute
+      expect(RateLimits.AI_CHAT.short.limit).toBe(5);
       expect(RateLimits.AI_CHAT.short.ttl).toBe(60000);
-      
-      // AI Analysis should allow 5 per minute
-      expect(RateLimits.AI_ANALYSIS.short.limit).toBe(5);
+
+      // AI Analysis should allow 2 per minute
+      expect(RateLimits.AI_ANALYSIS.short.limit).toBe(2);
       expect(RateLimits.AI_ANALYSIS.short.ttl).toBe(60000);
-      
-      // AI Summary should allow 5 per minute
-      expect(RateLimits.AI_SUMMARY.short.limit).toBe(5);
+
+      // AI Summary should allow 3 per minute
+      expect(RateLimits.AI_SUMMARY.short.limit).toBe(3);
       expect(RateLimits.AI_SUMMARY.short.ttl).toBe(60000);
     });
 
     it('should have standard limits for dashboard and tasks', () => {
-      // Dashboard operations (50 per minute)
-      expect(RateLimits.DASHBOARD.medium.limit).toBe(50);
-      expect(RateLimits.DASHBOARD.medium.ttl).toBe(60000);
-      
-      // Task operations (100 per minute)
-      expect(RateLimits.TASKS.medium.limit).toBe(100);
-      expect(RateLimits.TASKS.medium.ttl).toBe(60000);
-      
-      // User operations (100 per minute)
-      expect(RateLimits.USER.medium.limit).toBe(100);
-      expect(RateLimits.USER.medium.ttl).toBe(60000);
+      // Dashboard operations (100 per 5 minutes)
+      expect(RateLimits.DASHBOARD.medium.limit).toBe(100);
+      expect(RateLimits.DASHBOARD.medium.ttl).toBe(300000);
+
+      // Task operations (200 per 5 minutes)
+      expect(RateLimits.TASKS.medium.limit).toBe(200);
+      expect(RateLimits.TASKS.medium.ttl).toBe(300000);
+
+      // User operations (300 per 5 minutes)
+      expect(RateLimits.USER.medium.limit).toBe(300);
+      expect(RateLimits.USER.medium.ttl).toBe(300000);
     });
   });
 

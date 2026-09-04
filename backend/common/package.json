@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
-    "test": "jest --passWithNoTests",
+    "test": "jest",
     "test:connection": "ts-node tests/db/test-connection.ts"
   },
   "dependencies": {
