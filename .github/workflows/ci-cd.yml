@@ -94,6 +94,8 @@ jobs:
           version: 8
       - name: Install dependencies
         run: pnpm install
+      - name: Build shared common package
+        run: pnpm --filter common build
       - name: Run tests for ${{ matrix.service }}
         run: pnpm --filter ./backend/${{ matrix.service }} test
         env:

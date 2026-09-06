@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import { GqlThrottlerGuard } from '../src/guards/gql-throttler.guard';
 import { rateLimitConfig, RateLimits } from '../src/config/rate-limit.config';
 
@@ -12,6 +12,7 @@ describe('Rate Limiting', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [ThrottlerModule.forRoot(rateLimitConfig)],
       providers: [
+        Reflector,
         {
           provide: APP_GUARD,
           useClass: GqlThrottlerGuard,
