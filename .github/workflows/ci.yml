@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Build shared common package
+        run: pnpm --filter common build
+
       - name: Run backend tests
         run: |
           cd backend/api-gateway && pnpm test
