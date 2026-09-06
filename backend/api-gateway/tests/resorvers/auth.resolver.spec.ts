@@ -33,15 +33,7 @@ describe('AuthResolver', () => {
     },
   ];
 
-  const mockUser: User = { 
-    id: '1', 
-    email: 'test1@test.com', 
-    name: 'John', 
-    password: 'password1',
-    role: UserRole.User,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  const mockUser: User = mockUsers[0];
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
