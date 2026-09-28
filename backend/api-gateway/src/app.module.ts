@@ -35,9 +35,14 @@ import { GraphQLCacheInterceptor } from './interceptors/graphql-cache.intercepto
       type: 'postgres',
       url: process.env.DATABASE_URL,
       entities: [User, Task, Job, ChatMessage, DashboardInsight],
-      synchronize: process.env.NODE_ENV !== 'production', // Only sync in development
+      // Only sync in development, unless DB_SYNCHRONIZE=true (first boot without migrations)
+      synchronize: process.env.NODE_ENV !== 'production' || process.env.DB_SYNCHRONIZE === 'true',
       logging: process.env.NODE_ENV === 'development',
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      // Managed databases need SSL; set DATABASE_SSL=false for a Postgres container on the same network
+      ssl:
+        process.env.NODE_ENV === 'production' && process.env.DATABASE_SSL !== 'false'
+          ? { rejectUnauthorized: false }
+          : false,
     }),
     
     // Rate limiting configuration with Redis support for production

@@ -16,7 +16,8 @@ function durationToMs(value: string | undefined): number {
 function cookieOptions(): CookieOptions {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    // COOKIE_SECURE=false is only for serving over plain http (no domain / TLS yet)
+    secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false',
     sameSite: 'strict',
     // The browser only talks to the Next.js proxy, which serves GraphQL at /api/graphql
     path: process.env.REFRESH_COOKIE_PATH || '/api/graphql',
