@@ -48,8 +48,26 @@
       "postcss": ">=8.5.23",
       "sharp": ">=0.35.0",
       "qs": ">=6.16.0",
-      "multer": ">=2.3.0",
-      "ioredis": ">=6.0.0"
+      "multer": ">=2.4.0",
+      "ioredis": ">=6.0.0",
+      "follow-redirects": ">=1.16.0",
+      "form-data@4": "^4.0.6",
+      "lodash@4": "^4.18.1",
+      "proxy-addr": ">=2.0.8",
+      "ws@8": "^8.21.0",
+      "ws@7": "^7.5.11",
+      "jws@3": "^3.2.3",
+      "picomatch@2": "^2.3.2",
+      "minimatch@9": "^9.0.7",
+      "brace-expansion@2": "^2.1.4",
+      "diff@4": "^4.0.4",
+      "@apollo/protobufjs": ">=1.2.8",
+      "@protobufjs/codegen": ">=2.0.5",
+      "@protobufjs/utf8": ">=1.1.1",
+      "uuid@11": "^11.1.1",
+      "body-parser@2": "^2.3.0",
+      "browserslist": ">=4.28.7",
+      "@babel/core@7": "^7.29.6"
     }
   }
 }
