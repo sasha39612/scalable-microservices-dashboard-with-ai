@@ -3,74 +3,78 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { GqlAuthGuard } from '../../src/modules/auth/auth.guard';
 
-jest.mock('@nestjs/graphql', () => ({
-  GqlExecutionContext: {
-    create: jest.fn(),
-  },
-}));
+type MockRequest = { headers: Record<string, string>; user?: unknown };
+
+/** Build an ExecutionContext for either a GraphQL resolver or a REST controller */
+function createContext(req: MockRequest, type: 'graphql' | 'http'): ExecutionContext {
+  // GraphQL: [root, args, context, info]; Express: [req, res, next]
+  const args = type === 'graphql' ? [{}, {}, { req }, {}] : [req, {}, jest.fn()];
+  return {
+    getType: () => type,
+    getHandler: jest.fn(),
+    getClass: jest.fn(),
+    getArgs: () => args,
+    getArgByIndex: (i: number) => args[i],
+    switchToHttp: () => ({ getRequest: () => req }),
+  } as unknown as ExecutionContext;
+}
 
 describe('GqlAuthGuard', () => {
   let guard: GqlAuthGuard;
   let reflector: Reflector;
-  let jwtService: JwtService;
+  let jwtService: jest.Mocked<Pick<JwtService, 'verify'>>;
+
+  const payload = { sub: 'user-1', email: 'a@b.com', role: 'user' };
 
   beforeEach(() => {
     reflector = new Reflector();
-    jwtService = {
-      verify: jest.fn(),
-      sign: jest.fn(),
-    } as unknown as JwtService;
-    guard = new GqlAuthGuard(jwtService, reflector);
-  });
-
-  it('should allow access with valid token', async () => {
-    const mockContext = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn(),
-    } as unknown as ExecutionContext;
-
-    // Mock reflector to return false (not public)
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
-
-    // Mock the parent class canActivate to return true
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jest.spyOn(GqlAuthGuard.prototype, 'canActivate' as any).mockResolvedValue(true);
-
-    const result = await guard.canActivate(mockContext);
-    expect(result).toBe(true);
+    jwtService = { verify: jest.fn().mockReturnValue(payload) };
+    guard = new GqlAuthGuard(jwtService as unknown as JwtService, reflector);
   });
 
-  it('should allow access to public routes', async () => {
-    const mockContext = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn(),
-    } as unknown as ExecutionContext;
-
-    // Mock reflector to return true (public route)
+  it('should allow public routes without a token', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(true);
+    const req: MockRequest = { headers: {} };
 
-    const result = await guard.canActivate(mockContext);
-    expect(result).toBe(true);
+    expect(guard.canActivate(createContext(req, 'graphql'))).toBe(true);
+    expect(jwtService.verify).not.toHaveBeenCalled();
   });
 
-  it('should throw UnauthorizedException if token is invalid', async () => {
-    const mockContext = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn(),
-    } as unknown as ExecutionContext;
+  it.each(['graphql', 'http'] as const)(
+    'should verify the Bearer token and attach the payload (%s context)',
+    (type) => {
+      const req: MockRequest = { headers: { authorization: 'Bearer good-token' } };
 
-    // Mock reflector to return false (not public)
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
+      expect(guard.canActivate(createContext(req, type))).toBe(true);
+      expect(jwtService.verify).toHaveBeenCalledWith('good-token');
+      expect(req.user).toEqual(payload);
+    },
+  );
 
-    // Mock the parent class to reject
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jest.spyOn(GqlAuthGuard.prototype, 'canActivate' as any).mockRejectedValue(
-      new UnauthorizedException('Invalid token')
-    );
+  it('should reject a request without an authorization header', () => {
+    const req: MockRequest = { headers: {} };
 
-    await expect(guard.canActivate(mockContext)).rejects.toThrow(UnauthorizedException);
+    expect(() => guard.canActivate(createContext(req, 'http'))).toThrow(UnauthorizedException);
+  });
+
+  it.each(['good-token', 'Basic good-token', 'Bearer'])(
+    'should reject a malformed authorization header "%s"',
+    (header) => {
+      const req: MockRequest = { headers: { authorization: header } };
+
+      expect(() => guard.canActivate(createContext(req, 'graphql'))).toThrow(UnauthorizedException);
+      expect(jwtService.verify).not.toHaveBeenCalled();
+    },
+  );
+
+  it('should reject an invalid or expired token', () => {
+    jwtService.verify.mockImplementation(() => {
+      throw new Error('jwt expired');
+    });
+    const req: MockRequest = { headers: { authorization: 'Bearer bad-token' } };
+
+    expect(() => guard.canActivate(createContext(req, 'graphql'))).toThrow(UnauthorizedException);
+    expect(req.user).toBeUndefined();
   });
 });

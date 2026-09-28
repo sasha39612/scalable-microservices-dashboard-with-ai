@@ -28,8 +28,8 @@ export class User {
   password: string;
 
   @HideField()
-  @Column({ name: 'refreshToken', nullable: true })
-  refreshToken?: string;
+  @Column({ name: 'refreshToken', type: 'varchar', nullable: true })
+  refreshToken?: string | null;
 
   @Field(() => UserRole)
   @Column({

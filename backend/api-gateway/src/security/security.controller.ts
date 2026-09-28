@@ -1,8 +1,6 @@
-import { Controller, Get, Post, Body, UseGuards, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { SecurityService } from './security.service';
-import { JwtAuthGuard } from '../modules/auth/jwt-auth.guard';
 import { Roles } from '../modules/auth/decorators/roles.decorator';
-import { RolesGuard } from '../modules/auth/guards/roles.guard';
 import { Throttle } from '@nestjs/throttler';
 import { UserRole } from 'common';
 
@@ -12,7 +10,6 @@ import { UserRole } from 'common';
  * Requires admin authentication for most operations
  */
 @Controller('security')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class SecurityController {
   constructor(private readonly securityService: SecurityService) {}
 

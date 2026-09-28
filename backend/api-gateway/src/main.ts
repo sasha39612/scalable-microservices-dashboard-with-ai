@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -9,6 +10,9 @@ async function bootstrap() {
   // Trust proxy for proper IP detection behind load balancers
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
   
+  // Parse cookies so the auth resolver can read the httpOnly refresh token
+  app.use(cookieParser());
+
   // Enable global validation
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true, // Strip properties that do not have any decorators

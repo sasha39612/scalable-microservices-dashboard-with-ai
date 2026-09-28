@@ -1,9 +1,9 @@
 import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { GqlExecutionContext } from '@nestjs/graphql';
 import { AuthGuard as PassportAuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
+import { getRequest } from './get-request';
 
 @Injectable()
 export class GqlAuthGuard extends PassportAuthGuard('jwt') {
@@ -25,13 +25,16 @@ export class GqlAuthGuard extends PassportAuthGuard('jwt') {
       return true;
     }
 
-    const ctx = GqlExecutionContext.create(context);
-    const { req } = ctx.getContext();
+    const req = getRequest(context);
 
     const authHeader = req.headers.authorization;
     if (!authHeader) throw new UnauthorizedException('No authorization header');
 
-    const token = authHeader.split(' ')[1];
+    const [scheme, token] = authHeader.split(' ');
+    if (scheme !== 'Bearer' || !token) {
+      throw new UnauthorizedException('Malformed authorization header');
+    }
+
     try {
       const payload = this.jwtService.verify(token);
       req.user = payload;

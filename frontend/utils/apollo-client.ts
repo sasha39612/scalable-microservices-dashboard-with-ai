@@ -1,21 +1,48 @@
 // utils/apollo-client.ts
-import { ApolloClient, InMemoryCache, HttpLink, ApolloLink } from '@apollo/client';
+import { ApolloClient, InMemoryCache, HttpLink, ApolloLink, CombinedGraphQLErrors } from '@apollo/client';
+import { ErrorLink } from '@apollo/client/link/error';
+import { from, switchMap, throwError } from 'rxjs';
+import { getAccessToken, refreshSession } from './auth-session';
 
-// Auth middleware link - adds JWT token to requests
+// Auth middleware link - adds the in-memory JWT access token to requests
 const authLink = new ApolloLink((operation, forward) => {
-  // Only access localStorage in browser environment
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      operation.setContext(({ headers = {} }) => ({
-        headers: {
-          ...headers,
-          Authorization: `Bearer ${token}`,
-        },
-      }));
-    }
+  const token = getAccessToken();
+  if (token) {
+    operation.setContext(({ headers = {} }) => ({
+      headers: {
+        ...headers,
+        Authorization: `Bearer ${token}`,
+      },
+    }));
   }
   return forward(operation);
+});
+
+// The gateway reports 401s as UNAUTHENTICATED: under `extensions` in development,
+// at the top level in production (see formatError in the api-gateway app.module)
+const isUnauthenticated = (error: unknown) =>
+  CombinedGraphQLErrors.is(error) &&
+  error.errors.some(
+    (e) =>
+      e.extensions?.code === 'UNAUTHENTICATED' ||
+      (e as { code?: string }).code === 'UNAUTHENTICATED',
+  );
+
+// Expired access token: refresh it once via the httpOnly cookie, then retry the operation
+const refreshLink = new ErrorLink(({ error, operation, forward }) => {
+  if (!isUnauthenticated(error) || operation.getContext().authRetried) {
+    return;
+  }
+
+  return from(refreshSession()).pipe(
+    switchMap((token) => {
+      if (!token) {
+        return throwError(() => error);
+      }
+      operation.setContext({ authRetried: true });
+      return forward(operation);
+    }),
+  );
 });
 
 // HTTP link to your GraphQL endpoint
@@ -72,7 +99,7 @@ const httpLink = new HttpLink({
 
 // Create Apollo Client
 const client = new ApolloClient({
-  link: authLink.concat(httpLink), // combine auth and http links
+  link: ApolloLink.from([refreshLink, authLink, httpLink]), // retry-on-401, auth, http
   cache: new InMemoryCache(),      // caching
   defaultOptions: {
     watchQuery: {

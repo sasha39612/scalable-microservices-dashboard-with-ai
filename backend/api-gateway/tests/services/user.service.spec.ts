@@ -15,6 +15,7 @@ describe('UserService', () => {
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+    update: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -141,6 +142,20 @@ describe('UserService', () => {
       const found = await service.findByEmail('nonexisting@test.com');
       
       expect(found).toBeUndefined();
+    });
+  });
+
+  describe('updateRefreshToken', () => {
+    it('should store the hashed refresh token', async () => {
+      await service.updateRefreshToken('123', 'hashed-token');
+
+      expect(repository.update).toHaveBeenCalledWith('123', { refreshToken: 'hashed-token' });
+    });
+
+    it('should write null to clear the token (undefined would be skipped by TypeORM)', async () => {
+      await service.updateRefreshToken('123', null);
+
+      expect(repository.update).toHaveBeenCalledWith('123', { refreshToken: null });
     });
   });
 });

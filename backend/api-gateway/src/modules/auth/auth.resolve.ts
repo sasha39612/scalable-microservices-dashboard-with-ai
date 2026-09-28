@@ -1,11 +1,19 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { UnauthorizedException } from '@nestjs/common';
+import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql';
 import { Throttle } from '@nestjs/throttler';
+import { Request, Response } from 'express';
 import { User } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { clearRefreshCookie, readRefreshCookie, setRefreshCookie } from './refresh-cookie';
 import { RateLimits } from '../../config/rate-limit.config';
+
+interface GqlContext {
+  req: Request;
+  res: Response;
+}
 
 @Resolver(() => User)
 export class AuthResolver {
@@ -20,8 +28,11 @@ export class AuthResolver {
   async login(
     @Args('email') email: string,
     @Args('password') password: string,
+    @Context() { res }: GqlContext,
   ): Promise<AuthPayload> {
-    return this.authService.login(email, password);
+    const { accessToken, refreshToken, user } = await this.authService.login(email, password);
+    setRefreshCookie(res, refreshToken);
+    return { accessToken, user };
   }
 
   @Public()
@@ -31,10 +42,10 @@ export class AuthResolver {
     @Args('email') email: string,
     @Args('password') password: string,
     @Args('name') name: string,
+    @Context() ctx: GqlContext,
   ): Promise<AuthPayload> {
     await this.authService.signup(email, password, name);
-    const loginResult = await this.authService.login(email, password);
-    return loginResult;
+    return this.login(email, password, ctx);
   }
 
   @Public()
@@ -44,20 +55,10 @@ export class AuthResolver {
     @Args('email') email: string,
     @Args('password') password: string,
     @Args('name') name: string,
+    @Context() ctx: GqlContext,
   ): Promise<AuthPayload> {
     await this.authService.signup(email, password, name);
-    const loginResult = await this.authService.login(email, password);
-    return loginResult;
-  }
-
-  @Query(() => [User], { name: 'users' })
-  getUsers() {
-    return this.userService.findAll();
-  }
-
-  @Query(() => User, { name: 'user' })
-  getUser(@Args('id') id: string) {
-    return this.userService.findOne(id);
+    return this.login(email, password, ctx);
   }
 
   @Query(() => User, { name: 'me', description: 'Get current authenticated user' })
@@ -68,39 +69,40 @@ export class AuthResolver {
 
   @Public()
   @Throttle(RateLimits.AUTH)
-  @Mutation(() => RefreshPayload, { description: 'Refresh access token using refresh token' })
-  async refreshToken(@Args('refreshToken') refreshToken: string): Promise<RefreshPayload> {
-    return this.authService.refreshTokens(refreshToken);
+  @Mutation(() => AuthPayload, {
+    description: 'Issue a new access token using the httpOnly refresh token cookie',
+  })
+  async refreshToken(@Context() { req, res }: GqlContext): Promise<AuthPayload> {
+    const token = readRefreshCookie(req);
+    if (!token) {
+      throw new UnauthorizedException('Missing refresh token');
+    }
+
+    // On failure the cookie is left alone: with several tabs open, a request that lost a
+    // rotation race must not clear the fresh cookie another tab has just received.
+    const { accessToken, refreshToken, user } = await this.authService.refreshTokens(token);
+    setRefreshCookie(res, refreshToken);
+    return { accessToken, user };
   }
 
-  @Mutation(() => Boolean, { description: 'Logout user and invalidate refresh token' })
-  async logout(@Args('userId') userId: string): Promise<boolean> {
-    return this.authService.logout(userId);
+  @Mutation(() => Boolean, { description: 'Logout current user and invalidate refresh token' })
+  async logout(
+    @CurrentUser() user: { sub: string },
+    @Context() { res }: GqlContext,
+  ): Promise<boolean> {
+    clearRefreshCookie(res);
+    return this.authService.logout(user.sub);
   }
 }
 
 // GraphQL Object Type for Auth Response
 import { ObjectType, Field } from '@nestjs/graphql';
 
+// The refresh token is deliberately not a field: it only travels in the httpOnly cookie
 @ObjectType()
 export class AuthPayload {
   @Field({ name: 'access_token' })
   accessToken: string;
-
-  @Field({ name: 'refresh_token' })
-  refreshToken: string;
-
-  @Field(() => User)
-  user: User;
-}
-
-@ObjectType()
-export class RefreshPayload {
-  @Field({ name: 'access_token' })
-  accessToken: string;
-
-  @Field({ name: 'refresh_token' })
-  refreshToken: string;
 
   @Field(() => User)
   user: User;

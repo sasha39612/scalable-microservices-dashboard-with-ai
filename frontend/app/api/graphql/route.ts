@@ -32,6 +32,13 @@ export async function POST(request: NextRequest) {
       headers['Authorization'] = authHeader;
     }
 
+    // Forward cookies so the gateway can read the httpOnly refresh token
+    const cookieHeader = request.headers.get('cookie');
+    if (cookieHeader) {
+      // @ts-expect-error TypeScript doesn't allow index access on const headers object
+      headers['Cookie'] = cookieHeader;
+    }
+
     // Forward the real client User-Agent so downstream bot/DDoS heuristics
     // see the actual browser instead of this server-to-server fetch
     const clientUserAgent = request.headers.get('user-agent');
@@ -138,15 +145,15 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line no-console
         console.log('GraphQL response preview:', data.substring(0, 200) + (data.length > 200 ? '...' : ''));
 
-        return new NextResponse(data, {
+        // Same-origin proxy: no CORS headers, but pass the refresh cookie back to the browser
+        const proxyResponse = new NextResponse(data, {
           status: response.status,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
+        for (const setCookie of response.headers.getSetCookie()) {
+          proxyResponse.headers.append('Set-Cookie', setCookie);
+        }
+        return proxyResponse;
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`❌ Failed to connect to ${url}:`, error instanceof Error ? error.message : error);
@@ -181,11 +188,7 @@ export async function POST(request: NextRequest) {
 
 export async function OPTIONS() {
   return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
+    status: 204,
+    headers: { Allow: 'POST, OPTIONS' },
   });
 }

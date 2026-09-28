@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { createHash, randomUUID, timingSafeEqual } from 'crypto';
 import { apiGatewayAuditLogger, AuditAction } from 'common';
 
 import { User } from '../user/user.entity';
@@ -123,9 +124,8 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      // Compare the provided token with stored hashed token
-      const refreshTokenMatches = await bcrypt.compare(refreshToken, user.refreshToken);
-      if (!refreshTokenMatches) {
+      // Compare the provided token with the stored hash of the latest issued token
+      if (!this.refreshTokenMatches(refreshToken, user.refreshToken)) {
         await apiGatewayAuditLogger.logFailure(
           AuditAction.TOKEN_REFRESH,
           user.id,
@@ -178,6 +178,8 @@ export class AuthService {
       this.jwtService.signAsync(payload, {
         secret: this.JWT_REFRESH_SECRET,
         expiresIn: this.JWT_REFRESH_EXPIRATION as '7d',
+        // Unique per token, so two refreshes within the same second still rotate
+        jwtid: randomUUID(),
       }),
     ]);
 
@@ -188,7 +190,21 @@ export class AuthService {
   }
 
   private async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-    await this.usersService.updateRefreshToken(userId, hashedRefreshToken);
+    await this.usersService.updateRefreshToken(userId, this.hashRefreshToken(refreshToken));
+  }
+
+  /**
+   * SHA-256 rather than bcrypt: bcrypt only reads the first 72 bytes, and every JWT
+   * for the same user shares those bytes, so rotated-out tokens would still match.
+   * Refresh tokens are long and random, so a fast hash is sufficient.
+   */
+  private hashRefreshToken(refreshToken: string): string {
+    return createHash('sha256').update(refreshToken).digest('hex');
+  }
+
+  private refreshTokenMatches(refreshToken: string, storedHash: string): boolean {
+    const provided = Buffer.from(this.hashRefreshToken(refreshToken), 'hex');
+    const stored = Buffer.from(storedHash, 'hex');
+    return provided.length === stored.length && timingSafeEqual(provided, stored);
   }
 }

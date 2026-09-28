@@ -2,22 +2,30 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  SessionUser,
+  USER_FIELDS,
+  getAccessToken,
+  getTokenExpiry,
+  postGraphQL,
+  refreshSession,
+  setSession,
+  subscribeToSession,
+} from '@/utils/auth-session';
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-}
+type User = SessionUser;
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
 }
+
+// Refresh this long before the access token expires
+const REFRESH_MARGIN_MS = 60_000;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -28,127 +36,82 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Check for stored token on mount
-    const storedToken = localStorage.getItem('authToken');
-    if (storedToken) {
-      setToken(storedToken);
-      // Verify token and fetch user data
-      verifyToken(storedToken);
-    } else {
-      setIsLoading(false);
-    }
+    // Mirror the shared session, which the Apollo client can also refresh
+    const unsubscribe = subscribeToSession((nextToken, nextUser) => {
+      setToken(nextToken);
+      if (!nextToken) {
+        setUser(null);
+      } else if (nextUser) {
+        setUser(nextUser);
+      }
+    });
+
+    // Restore the session from the httpOnly refresh cookie
+    refreshSession().finally(() => setIsLoading(false));
+
+    return unsubscribe;
   }, []);
 
-  const verifyToken = async (token: string) => {
-    try {
-      // Call verify endpoint to get user data
-      const response = await fetch('/api/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            query VerifyToken {
-              me {
-                id
-                email
-                name
-                role
-              }
-            }
-          `,
-        }),
-      });
+  useEffect(() => {
+    if (!token) return;
+    const expiresAt = getTokenExpiry(token);
+    if (!expiresAt) return;
 
-      const data = await response.json();
-      if (data.data?.me) {
-        setUser(data.data.me);
-      } else {
-        // Token invalid, clear it
-        localStorage.removeItem('authToken');
-        setToken(null);
+    // Silently renew the access token shortly before it expires
+    const delay = Math.max(0, expiresAt - Date.now() - REFRESH_MARGIN_MS);
+    const timer = setTimeout(() => {
+      refreshSession();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [token]);
+
+  const authenticate = async (
+    mutation: 'login' | 'register',
+    variables: Record<string, string>,
+  ) => {
+    const args = mutation === 'login'
+      ? '$email: String!, $password: String!'
+      : '$email: String!, $password: String!, $name: String!';
+    const params = mutation === 'login'
+      ? 'email: $email, password: $password'
+      : 'email: $email, password: $password, name: $name';
+
+    const { data, errors } = await postGraphQL<
+      Record<string, { access_token: string; user: User }>
+    >(
+      `mutation Auth(${args}) { ${mutation}(${params}) { access_token user { ${USER_FIELDS} } } }`,
+      variables,
+      null,
+    );
+
+    if (errors?.length || !data?.[mutation]) {
+      throw new Error(errors?.[0]?.message ?? 'Authentication failed');
+    }
+
+    const { access_token, user: userData } = data[mutation];
+    setSession(access_token, userData);
+  };
+
+  const login = (email: string, password: string) =>
+    authenticate('login', { email, password });
+
+  const register = (email: string, password: string, name: string) =>
+    authenticate('register', { email, password, name });
+
+  const logout = async () => {
+    try {
+      // Revoke the refresh token server-side and clear its cookie
+      let currentToken = getAccessToken();
+      if (currentToken && (getTokenExpiry(currentToken) ?? 0) <= Date.now()) {
+        currentToken = await refreshSession();
+      }
+      if (currentToken) {
+        await postGraphQL('mutation Logout { logout }', undefined, currentToken);
       }
     } catch {
-      // Token verification failed, clear stored token
-      localStorage.removeItem('authToken');
-      setToken(null);
-    } finally {
-      setIsLoading(false);
+      // Still log out locally if the server can't be reached
     }
-  };
-
-  const login = async (email: string, password: string) => {
-    const response = await fetch('/api/graphql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `
-          mutation Login($email: String!, $password: String!) {
-            login(email: $email, password: $password) {
-              access_token
-              user {
-                id
-                email
-                name
-                role
-              }
-            }
-          }
-        `,
-        variables: { email, password },
-      }),
-    });
-
-    const data = await response.json();
-    if (data.errors) {
-      throw new Error(data.errors[0].message);
-    }
-
-    const { access_token, user: userData } = data.data.login;
-    localStorage.setItem('authToken', access_token);
-    setToken(access_token);
-    setUser(userData);
-  };
-
-  const register = async (email: string, password: string, name: string) => {
-    const response = await fetch('/api/graphql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `
-          mutation Register($email: String!, $password: String!, $name: String!) {
-            register(email: $email, password: $password, name: $name) {
-              access_token
-              user {
-                id
-                email
-                name
-                role
-              }
-            }
-          }
-        `,
-        variables: { email, password, name },
-      }),
-    });
-
-    const data = await response.json();
-    if (data.errors) {
-      throw new Error(data.errors[0].message);
-    }
-
-    const { access_token, user: userData } = data.data.register;
-    localStorage.setItem('authToken', access_token);
-    setToken(access_token);
-    setUser(userData);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('authToken');
-    setToken(null);
-    setUser(null);
+    setSession(null, null);
     router.push('/login');
   };
 

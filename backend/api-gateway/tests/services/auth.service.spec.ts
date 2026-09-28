@@ -3,6 +3,7 @@ import { UserService } from '../../src/modules/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt'; // this is now mocked
+import { createHash } from 'crypto';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn(async (data: string | Buffer) => `hashed-${data}`),
@@ -62,5 +63,49 @@ describe('AuthService', () => {
   it('login should throw UnauthorizedException if user not found', async () => {
     (userService.findByEmail as jest.Mock).mockResolvedValue(undefined);
     await expect(service.login('notfound@test.com', 'password')).rejects.toThrow(UnauthorizedException);
+  });
+
+  describe('refresh tokens', () => {
+    const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+
+    it('login should store a SHA-256 hash of the refresh token, not the token itself', async () => {
+      (userService.findByEmail as jest.Mock).mockResolvedValue({ ...mockUser, password: 'hashed-password' });
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      await service.login('test@test.com', 'password');
+
+      expect(userService.updateRefreshToken).toHaveBeenCalledWith('1', sha256('jwt-token'));
+    });
+
+    it('refreshTokens should rotate when the presented token is the latest one', async () => {
+      (userService.findOne as jest.Mock).mockResolvedValue({ ...mockUser, refreshToken: sha256('current-token') });
+      jwtService.signAsync.mockResolvedValue('rotated-token');
+
+      const result = await service.refreshTokens('current-token');
+
+      expect(result.refreshToken).toBe('rotated-token');
+      expect(userService.updateRefreshToken).toHaveBeenCalledWith('1', sha256('rotated-token'));
+    });
+
+    it('refreshTokens should reject a rotated-out token even if its signature is still valid', async () => {
+      // Same 72-byte prefix as the current token: bcrypt would have accepted it
+      const prefix = 'x'.repeat(72);
+      (userService.findOne as jest.Mock).mockResolvedValue({ ...mockUser, refreshToken: sha256(`${prefix}-new`) });
+
+      await expect(service.refreshTokens(`${prefix}-old`)).rejects.toThrow(UnauthorizedException);
+      expect(userService.updateRefreshToken).not.toHaveBeenCalled();
+    });
+
+    it('refreshTokens should reject after logout cleared the stored hash', async () => {
+      (userService.findOne as jest.Mock).mockResolvedValue({ ...mockUser, refreshToken: null });
+
+      await expect(service.refreshTokens('current-token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('logout should clear the stored hash', async () => {
+      await service.logout('1');
+
+      expect(userService.updateRefreshToken).toHaveBeenCalledWith('1', null);
+    });
   });
 });

@@ -1,23 +1,33 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { CacheInvalidate } from '../../decorators/cache.decorators';
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { CreateUserInput, UpdateUserInput } from 'common';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from 'common';
 
 @Resolver(() => User)
 export class UserResolver {
   constructor(private readonly userService: UserService) {}
 
-  // All users can view the list (authenticated by default via global guard)
+  // Only admins can list all users
+  @Roles(UserRole.Admin)
   @Query(() => [User], { name: 'users' })
   getUsers() {
     return this.userService.findAll();
   }
 
+  // Admins can read any user; everyone else only themselves
   @Query(() => User, { name: 'user' })
-  getUser(@Args('id') id: string) {
+  getUser(
+    @Args('id') id: string,
+    @CurrentUser() currentUser: { sub: string; role: UserRole },
+  ) {
+    if (currentUser.role !== UserRole.Admin && currentUser.sub !== id) {
+      throw new ForbiddenException('You can only view your own user record');
+    }
     return this.userService.findOne(id);
   }
 

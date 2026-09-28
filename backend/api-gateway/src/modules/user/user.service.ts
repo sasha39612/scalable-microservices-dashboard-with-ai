@@ -74,8 +74,7 @@ export class UserService {
   }
 
   async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
-    await this.userRepository.update(userId, { 
-      refreshToken: refreshToken || undefined 
-    });
+    // null (not undefined) so TypeORM actually clears the column on logout
+    await this.userRepository.update(userId, { refreshToken });
   }
 }
