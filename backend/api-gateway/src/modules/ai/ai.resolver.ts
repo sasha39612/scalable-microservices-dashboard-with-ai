@@ -1,4 +1,7 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { UserRole } from 'common';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Throttle } from '@nestjs/throttler';
 import { AIService } from './ai.service';
 import {
@@ -16,6 +19,13 @@ import {
 import { ChatMessage } from './entities/chat-message.entity';
 import { RateLimits } from '../../config/rate-limit.config';
 
+// Admins may act on any user's data; everyone else only on their own
+function assertOwnerOrAdmin(currentUser: { sub: string; role: UserRole }, userId: string): void {
+  if (currentUser.role !== UserRole.Admin && currentUser.sub !== userId) {
+    throw new ForbiddenException('You can only access your own data');
+  }
+}
+
 @Resolver()
 export class AIResolver {
   constructor(private readonly aiService: AIService) {}
@@ -24,15 +34,19 @@ export class AIResolver {
   @Mutation(() => ChatResponse, { description: 'Send a chat message and get AI response' })
   async chat(
     @Args('input') input: ChatRequestInput,
+    @CurrentUser() currentUser: { sub: string; role: UserRole },
   ): Promise<ChatResponse> {
+    if (input.userId) assertOwnerOrAdmin(currentUser, input.userId);
     return this.aiService.chat(input);
   }
 
   @Query(() => [ChatMessage], { description: 'Get chat history for a user' })
   async chatHistory(
     @Args('userId') userId: string,
+    @CurrentUser() currentUser: { sub: string; role: UserRole },
     @Args('conversationId', { nullable: true }) conversationId?: string,
   ): Promise<ChatMessage[]> {
+    assertOwnerOrAdmin(currentUser, userId);
     return this.aiService.getChatHistory(userId, conversationId);
   }
 
@@ -54,7 +68,9 @@ export class AIResolver {
   @Query(() => RecommendationsResponse, { description: 'Get AI recommendations for a user' })
   async recommendations(
     @Args('input') input: RecommendationsRequestInput,
+    @CurrentUser() currentUser: { sub: string; role: UserRole },
   ): Promise<RecommendationsResponse> {
+    assertOwnerOrAdmin(currentUser, input.userId);
     return this.aiService.getRecommendations(input);
   }
 

@@ -5,7 +5,7 @@ import { AIModule } from './ai-module';
 async function bootstrap() {
   const app = await NestFactory.create(AIModule);
   
-  app.enableCors();
+  // Internal service: called server-to-server by the gateway only, so no CORS
   app.useGlobalPipes(new ValidationPipe());
   
   const port = process.env.PORT || 5000;

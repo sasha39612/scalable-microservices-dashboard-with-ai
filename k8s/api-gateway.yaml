@@ -29,7 +29,7 @@ spec:
             - name: PORT
               value: "4000"
             - name: CORS_ORIGIN
-              value: "*"  # For development, in production should be specific domains
+              value: "https://REPLACE-WITH-FRONTEND-ORIGIN"  # Must be the exact frontend origin(s), comma-separated
           readinessProbe:
             httpGet:
               path: /health

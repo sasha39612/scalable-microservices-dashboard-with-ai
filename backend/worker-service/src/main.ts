@@ -5,7 +5,7 @@ import { WorkerModule } from './worler.module';
 async function bootstrap() {
   const app = await NestFactory.create(WorkerModule);
   
-  app.enableCors();
+  // Internal service: called server-to-server by the gateway only, so no CORS
   app.setGlobalPrefix('api', { exclude: ['health'] });
   app.useGlobalPipes(new ValidationPipe());
   

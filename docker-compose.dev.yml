@@ -94,8 +94,9 @@ services:
       context: .
       dockerfile: backend/worker-service/Dockerfile.dev
     container_name: worker-service
-    ports:
-      - "4001:4001"
+    # Internal only: reachable by the gateway over the backend network, not published to the host
+    expose:
+      - "4001"
     volumes:
       - ./backend/worker-service/src:/app/backend/worker-service/src
       - ./backend/common/src:/app/backend/common/src
@@ -122,8 +123,9 @@ services:
       context: .
       dockerfile: backend/ai-service/Dockerfile.dev
     container_name: ai-service
-    ports:
-      - "5000:5000"
+    # Internal only: reachable by the gateway over the backend network, not published to the host
+    expose:
+      - "5000"
     volumes:
       - ./backend/ai-service/src:/app/backend/ai-service/src
       - ./backend/common/src:/app/backend/common/src

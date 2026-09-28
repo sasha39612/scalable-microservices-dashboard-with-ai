@@ -66,7 +66,10 @@ export class WorkerClient {
     this.apiKey = process.env.WORKER_SERVICE_API_KEY || '';
     
     if (!this.apiKey) {
-      this.logger.warn('⚠️  WORKER_SERVICE_API_KEY not set. Inter-service authentication disabled!');
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('WORKER_SERVICE_API_KEY must be set in production');
+      }
+      this.logger.warn('WORKER_SERVICE_API_KEY not set. Requests to the worker service will be rejected.');
     }
   }
 
